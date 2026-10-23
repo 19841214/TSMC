@@ -1,0 +1,2965 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台積創新館 6 大半導體工程因果模擬沙盒 × 50 題精熟測驗認證系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-surface: rgba(30, 41, 59, 0.85);
+      --border-glow: rgba(168, 85, 247, 0.35);
+      --accent-primary: #a855f7;
+      --accent-secondary: #f59e0b;
+      --accent-success: #22c55e;
+      --accent-danger: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-image: 
+        linear-gradient(to right, rgba(168, 85, 247, 0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(168, 85, 247, 0.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .glass-card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+    input[type=range] {
+      accent-color: var(--accent-primary);
+    }
+    .tab-active {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(245, 158, 11, 0.25));
+      border-color: #a855f7;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+    }
+    .console-box {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shake 0.4s ease-in-out;
+    }
+    input, textarea {
+      font-size: 16px !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24 sm:pb-8 antialiased selection:bg-purple-500 selection:text-white">
+
+  <!-- 頂部導覽列 -->
+  <header class="border-b border-purple-900/50 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-3 h-3 rounded-full bg-purple-500 animate-pulse shadow-[0_0_12px_#a855f7]"></div>
+        <div>
+          <span class="text-[11px] uppercase tracking-widest text-purple-400 font-bold block">Cleanroom Fab HUD • TSMC Museum All-in-One System</span>
+          <h1 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+            台積創新館半導體因果模擬沙盒 × 50 題精熟認證
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-900/80 text-purple-300 border border-purple-500/40 mono">v2.5 全整合版</span>
+          </h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- TTS 播報狀態徽章 -->
+        <div id="ttsBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span id="ttsStatusText">TTS 就緒</span>
+        </div>
+        <!-- 直接跳轉測驗按鈕 -->
+        <button onclick="switchModule(7)" class="px-3.5 py-1.5 text-xs font-extrabold rounded-lg bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-lg shadow-purple-600/30 transition flex items-center gap-1.5">
+          <span>📝 50 題測驗與發照</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 模組快速切換頁籤 (桌面端 7 大分頁) -->
+  <div class="max-w-6xl w-full mx-auto px-4 pt-4 hidden sm:block">
+    <div class="grid grid-cols-7 gap-2">
+      <button onclick="switchModule(1)" id="tab-1" class="tab-btn tab-active p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1">
+        <span class="text-base">🔬</span>
+        <span class="truncate w-full">M1 EUV 配平</span>
+      </button>
+      <button onclick="switchModule(2)" id="tab-2" class="tab-btn p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1 hover:border-purple-500/50">
+        <span class="text-base">🔐</span>
+        <span class="truncate w-full">M2 8大工序</span>
+      </button>
+      <button onclick="switchModule(3)" id="tab-3" class="tab-btn p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1 hover:border-purple-500/50">
+        <span class="text-base">🔍</span>
+        <span class="truncate w-full">M3 CoWoS 透視</span>
+      </button>
+      <button onclick="switchModule(4)" id="tab-4" class="tab-btn p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1 hover:border-purple-500/50">
+        <span class="text-base">⚡</span>
+        <span class="truncate w-full">M4 供應鏈故障</span>
+      </button>
+      <button onclick="switchModule(5)" id="tab-5" class="tab-btn p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1 hover:border-purple-500/50">
+        <span class="text-base">⏱️</span>
+        <span class="truncate w-full">M5 微塵危機</span>
+      </button>
+      <button onclick="switchModule(6)" id="tab-6" class="tab-btn p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1 hover:border-purple-500/50">
+        <span class="text-base">🎯</span>
+        <span class="truncate w-full">M6 離子瞄準</span>
+      </button>
+      <button onclick="switchModule(7)" id="tab-7" class="tab-btn p-2 rounded-xl border border-amber-500/40 text-xs font-extrabold transition text-center flex flex-col items-center gap-1 bg-amber-950/30 text-amber-300 hover:border-amber-400 shadow-md">
+        <span class="text-base">🏆</span>
+        <span class="truncate w-full">50 題精熟發照</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 主要內容容器 -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-4 space-y-6">
+
+    <!-- ==================== MODULE 1 ==================== -->
+    <section id="module-1" class="module-section space-y-4">
+      <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-purple-900/60 text-purple-300 border border-purple-500/40 text-xs font-bold mono">M1 • 雙變數配平</span>
+            <h2 class="text-lg sm:text-xl font-black text-white">EUV 極紫外光微影曝光與數值孔徑配平 (Lithography Balancing)</h2>
+          </div>
+          <span class="text-xs text-amber-400 font-semibold">對齊展區：先進製程與摩爾定律</span>
+        </div>
+        <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed mb-4">
+          💡 <strong class="text-purple-300">白話秒懂：</strong>微影就像在矽晶片上用極紫外光雕刻奈米電路。曝光太弱，電路糊成一團斷不開；曝光過猛，電路太細直接倒塌！只有同時配平能量與焦點，才能刻出完美的 2nm 奈米閘極。
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-7 bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col items-center justify-center">
+            <canvas id="m1Canvas" width="560" height="260" class="w-full max-w-full rounded-lg bg-slate-900"></canvas>
+            <div class="flex justify-between w-full px-2 pt-2 text-[11px] text-slate-400 mono">
+              <span>光源：13.5nm EUV 電漿</span>
+              <span id="m1CdText">閘極臨界尺寸 (CD)：2.0 nm</span>
+              <span id="m1StatusText" class="text-emerald-400 font-bold">甜蜜點達成</span>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-4 bg-slate-900/70 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300 font-semibold">⚡ 曝光能量劑量 (Exposure Dose)</span>
+                <span id="m1DoseVal" class="text-purple-400 font-mono font-bold">50 mJ/cm²</span>
+              </div>
+              <input type="range" id="m1Dose" min="10" max="90" value="50" class="w-full h-2 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                <span>10 (未透光阻)</span>
+                <span class="text-emerald-400">綠色甜蜜區 (45-55)</span>
+                <span>90 (線條崩塌)</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300 font-semibold">🎯 焦點深度偏移 (Defocus Offset)</span>
+                <span id="m1FocusVal" class="text-amber-400 font-mono font-bold">0 nm</span>
+              </div>
+              <input type="range" id="m1Focus" min="-30" max="30" value="0" class="w-full h-2 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                <span>-30 nm (失焦模糊)</span>
+                <span class="text-emerald-400">極限焦深 (-5 ~ +5)</span>
+                <span>+30 nm (失焦模糊)</span>
+              </div>
+            </div>
+
+            <div class="pt-2 flex gap-2">
+              <button onclick="resetM1(50, 0)" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-500/30 transition">
+                🎯 還原甜蜜點
+              </button>
+              <button onclick="resetM1(20, -20)" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 transition">
+                💥 體驗欠曝失焦
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="console-box mt-4 p-4 rounded-xl border border-purple-500/30">
+          <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🧠 即時工程因果診斷儀 (Live Cause-and-Effect Console)</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【你現在的操作狀態】</span>
+              <p id="m1DiagCurrent" class="text-white font-medium">能量 50 mJ/cm²，焦距 0 nm。光學焦點完全切齊光阻深度。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【⚖️ 雙向後果預警】</span>
+              <p id="m1DiagWhatIf" class="text-amber-300">👉 若能量高於 65：光阻崩塌斷裂。<br>👉 若能量低於 35：圖形沾黏短路。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【💡 這代表什麼工程意義】</span>
+              <p class="text-slate-200">半導體製程容許窗口（Process Window）極窄，台積電工程師必須確保百萬片晶圓在奈米容差內精準受光。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ESP 專區 -->
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <button onclick="speakText('Photolithography')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Photolithography</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 光學微影製程</div>
+            </button>
+            <button onclick="speakText('Numerical Aperture')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Numerical Aperture</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 數值孔徑 (NA)</div>
+            </button>
+            <button onclick="speakText('Photoresist')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Photoresist</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 光阻劑 (感光材料)</div>
+            </button>
+            <button onclick="speakText('Depth of Focus')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Depth of Focus</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 焦點深度 (DOF)</div>
+            </button>
+          </div>
+
+          <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <strong class="text-amber-300">💬 跨國工程簡報金句：</strong>
+              "We have optimized the EUV exposure dose to achieve tight CD control at the 2-nanometer node."
+            </div>
+            <button onclick="speakText('We have optimized the EUV exposure dose to achieve tight CD control at the 2-nanometer node.')" class="px-3 py-1 rounded bg-purple-700 hover:bg-purple-600 text-white shrink-0 text-xs">
+              朗讀金句 🔊
+            </button>
+          </div>
+
+          <div class="mt-3 flex justify-end">
+            <button onclick="jumpToQuizCategory(17)" class="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1 font-semibold">
+              <span>📝 前往 50 題測驗挑戰「微影與先進製程」大題 (Q18~Q25) →</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== MODULE 2 ==================== -->
+    <section id="module-2" class="module-section space-y-4 hidden">
+      <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-purple-900/60 text-purple-300 border border-purple-500/40 text-xs font-bold mono">M2 • 工序與安全互鎖</span>
+            <h2 class="text-lg sm:text-xl font-black text-white">晶圓製造 8 大核心工序與安全互鎖 (Sequential SOP & Safety Pipeline)</h2>
+          </div>
+          <span class="text-xs text-amber-400 font-semibold">對齊展區：無塵室製造世界</span>
+        </div>
+        <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed mb-4">
+          💡 <strong class="text-purple-300">白話秒懂：</strong>半導體工序順序嚴格不可逆！沒長氧化層就塗光阻、或沒抽真空就直接開強酸電漿蝕刻，晶圓會立刻炸裂報廢。體驗前置安全鎖與 8 大步驟的嚴格順序。
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-7 bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col items-center justify-center">
+            <canvas id="m2Canvas" width="560" height="260" class="w-full max-w-full rounded-lg bg-slate-900"></canvas>
+            <div class="flex justify-between w-full px-2 pt-2 text-[11px] text-slate-400 mono">
+              <span id="m2LockStatus" class="text-rose-400">安全連鎖：未就緒 (LOCKED)</span>
+              <span id="m2StepStatus">目前工序：Step 0 / 8</span>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-3 bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+            <div class="p-3 bg-slate-950 rounded-xl border border-slate-700 flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-slate-200 block">前置安全互鎖開關</span>
+                <span class="text-[10px] text-slate-400">真空度抽達 10⁻⁶ Torr & N₂ 吹洗</span>
+              </div>
+              <button id="m2LockBtn" onclick="toggleM2Lock()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition">
+                點擊解除鎖定
+              </button>
+            </div>
+
+            <div class="text-[11px] font-bold text-slate-400">請按正確半導體工序點擊推進：</div>
+            <div id="m2StepGrid" class="grid grid-cols-2 gap-1.5 text-xs"></div>
+
+            <button onclick="resetM2()" class="w-full py-1.5 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+              🔄 重設全新晶圓重跑
+            </button>
+          </div>
+        </div>
+
+        <div class="console-box mt-4 p-4 rounded-xl border border-purple-500/30">
+          <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🧠 即時工程因果診斷儀 (Live Cause-and-Effect Console)</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【你現在的操作狀態】</span>
+              <p id="m2DiagCurrent" class="text-white font-medium">尚未解除安全鎖。晶圓機台處於安全防護狀態。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【⚖️ 雙向後果預警】</span>
+              <p id="m2DiagWhatIf" class="text-amber-300">👉 若跳步驟蝕刻：未披覆光阻之裸晶圓將被酸蝕穿孔。<br>👉 若嚴格遵守工序：奈米結構層層無瑕累積。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【💡 這代表什麼工程意義】</span>
+              <p class="text-slate-200">半導體製造歷時 2-3 個月、歷經上千道工步，任一環節出錯都將造成整批晶圓報廢，SOP 互鎖機制至關重要。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <button onclick="speakText('Thermal Oxidation')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Oxidation</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 熱氧化生成絕緣層</div>
+            </button>
+            <button onclick="speakText('Dry Etching')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Dry Etching</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 電漿乾式蝕刻</div>
+            </button>
+            <button onclick="speakText('Ion Implantation')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Ion Implantation</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 離子植入摻雜</div>
+            </button>
+            <button onclick="speakText('Chemical Mechanical Planarization')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>CMP</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 化學機械研磨</div>
+            </button>
+          </div>
+          <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <strong class="text-amber-300">💬 跨國工程簡報金句：</strong>
+              "We must strictly adhere to the cleanroom SOP to ensure process stability and high repeatability."
+            </div>
+            <button onclick="speakText('We must strictly adhere to the cleanroom SOP to ensure process stability and high repeatability.')" class="px-3 py-1 rounded bg-purple-700 hover:bg-purple-600 text-white shrink-0 text-xs">朗讀金句 🔊</button>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button onclick="jumpToQuizCategory(8)" class="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1 font-semibold">
+              <span>📝 前往 50 題測驗挑戰「晶圓製造工藝與無塵室」題庫 (Q9~Q17) →</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== MODULE 3 ==================== -->
+    <section id="module-3" class="module-section space-y-4 hidden">
+      <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-purple-900/60 text-purple-300 border border-purple-500/40 text-xs font-bold mono">M3 • X光透視鏡與滑動比對</span>
+            <h2 class="text-lg sm:text-xl font-black text-white">2.5D / 3D 先進封裝 (CoWoS) 內部微結構透視 (Packaging X-Ray Metrology)</h2>
+          </div>
+          <span class="text-xs text-amber-400 font-semibold">對齊展區：超越摩爾定律與 AI 晶片</span>
+        </div>
+        <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed mb-4">
+          💡 <strong class="text-purple-300">白話秒懂：</strong>現代 AI 晶片不能只看外殼！在外部肉眼只能看到金屬蓋與銲球，拉開 X 光透視簾或移動放大鏡，就能直接穿透觀察內部成千上萬根高密度 TSV（矽穿孔）與微凸塊有無虛焊缺陷。
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-8 bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col items-center justify-center relative select-none">
+            <canvas id="m3Canvas" width="600" height="280" class="w-full max-w-full rounded-lg bg-slate-900 cursor-ew-resize"></canvas>
+            <div class="flex justify-between w-full px-2 pt-2 text-[11px] text-slate-400 mono">
+              <span>模式：左右滑動分割簾比對</span>
+              <span id="m3CurtainPos">透視比例：50%</span>
+              <span id="m3DefectStatus" class="text-emerald-400">TSV 導通良好 (99.8%)</span>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 space-y-3 bg-slate-900/70 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-200 block mb-2">觀測晶片核心目標切換：</span>
+              <div class="space-y-2">
+                <button onclick="setM3Mode('gpu')" id="m3Btn-gpu" class="w-full py-2 px-3 text-xs font-bold rounded-lg bg-purple-900/60 text-purple-200 border border-purple-500/50 text-left flex justify-between">
+                  <span>Logic GPU Die</span> <span>運算主晶片</span>
+                </button>
+                <button onclick="setM3Mode('hbm')" id="m3Btn-hbm" class="w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-900 text-slate-300 border border-slate-700 text-left flex justify-between">
+                  <span>HBM3e Memory</span> <span>立體堆疊記憶體</span>
+                </button>
+                <button onclick="setM3Mode('interposer')" id="m3Btn-interposer" class="w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-900 text-slate-300 border border-slate-700 text-left flex justify-between">
+                  <span>Silicon Interposer</span> <span>高密度矽中介層</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+              <span class="text-slate-400 block mb-1">透視鏡手動位置：</span>
+              <input type="range" id="m3CurtainRange" min="5" max="95" value="50" class="w-full h-2">
+              <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                <span>外觀光學層</span>
+                <span>內部 X 光微結構</span>
+              </div>
+            </div>
+
+            <button onclick="injectM3Defect()" class="py-2 text-xs font-bold rounded-lg bg-amber-950/70 hover:bg-amber-900 text-amber-300 border border-amber-500/40 transition">
+              ⚠️ 模擬微凸塊冷焊缺陷 (Solder Void)
+            </button>
+          </div>
+        </div>
+
+        <div class="console-box mt-4 p-4 rounded-xl border border-purple-500/30">
+          <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🧠 即時工程因果診斷儀 (Live Cause-and-Effect Console)</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【你現在的操作狀態】</span>
+              <p id="m3DiagCurrent" class="text-white font-medium">聚焦於 Logic GPU Die。X 光透視下微凸塊接觸電阻正常。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【⚖️ 雙向後果預警】</span>
+              <p id="m3DiagWhatIf" class="text-amber-300">👉 若微凸塊產生氣孔空洞：大電流通過時局部熱阻飆升，引發熱擊穿。<br>👉 若結合無缺陷：超高頻寬記憶體發揮極致傳輸效能。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【💡 這代表什麼工程意義】</span>
+              <p class="text-slate-200">CoWoS 技術讓台積電成為全球生成式 AI 晶片的唯一製造引擎，非破壞性 X 光計量（Metrology）是良率守門員。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <button onclick="speakText('Advanced Packaging')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Advanced Packaging</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 先進封裝技術</div>
+            </button>
+            <button onclick="speakText('Through-Silicon Via')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Through-Silicon Via</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 矽穿孔 (TSV)</div>
+            </button>
+            <button onclick="speakText('Heterogeneous Integration')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Heterogeneous</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[adj.] 異質整合</div>
+            </button>
+            <button onclick="speakText('Interposer')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Interposer</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 矽中介層</div>
+            </button>
+          </div>
+          <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <strong class="text-amber-300">💬 跨國工程簡報金句：</strong>
+              "By integrating HBM via 2.5D interposer, we broke the memory bandwidth wall for AI workloads."
+            </div>
+            <button onclick="speakText('By integrating HBM via 2.5D interposer, we broke the memory bandwidth wall for AI workloads.')" class="px-3 py-1 rounded bg-purple-700 hover:bg-purple-600 text-white shrink-0 text-xs">朗讀金句 🔊</button>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button onclick="jumpToQuizCategory(25)" class="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1 font-semibold">
+              <span>📝 前往 50 題測驗挑戰「先進封裝與 CoWoS 異質整合」題庫 (Q26~Q33) →</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== MODULE 4 ==================== -->
+    <section id="module-4" class="module-section space-y-4 hidden">
+      <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-purple-900/60 text-purple-300 border border-purple-500/40 text-xs font-bold mono">M4 • 供應鏈故障注入</span>
+            <h2 class="text-lg sm:text-xl font-black text-white">純晶圓代工 (Foundry Model) 全球供應鏈故障注入器 (Supply Chain Breaker)</h2>
+          </div>
+          <span class="text-xs text-amber-400 font-semibold">對齊展區：台積商業模式與全球合作</span>
+        </div>
+        <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed mb-4">
+          💡 <strong class="text-purple-300">白話秒懂：</strong>張忠謀開創的純晶圓代工，讓全世界無廠半導體（Fabless）專注設計。試試點擊「切斷代工廠」或「中斷 EDA 授權」，動態觀察全球電動車、手機與 AI 伺服器的骨牌停工危機！
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-8 bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col items-center justify-center">
+            <canvas id="m4Canvas" width="600" height="260" class="w-full max-w-full rounded-lg bg-slate-900"></canvas>
+            <div class="flex justify-between w-full px-2 pt-2 text-[11px] text-slate-400 mono">
+              <span>晶片流通動能：<span id="m4FlowStatus" class="text-emerald-400 font-bold">100% 暢通</span></span>
+              <span>受衝擊產線：<span id="m4ImpactText" class="text-slate-300">0 家廠商</span></span>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 space-y-2 bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs font-bold text-slate-300 mb-1">主動注入供應鏈斷鏈點：</div>
+            <button onclick="toggleM4Node('eda')" id="m4Node-eda" class="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-800 border border-slate-700 text-slate-200 text-left flex justify-between transition">
+              <span>1. EDA / IP 智財授權</span> <span class="text-emerald-400">● 正常</span>
+            </button>
+            <button onclick="toggleM4Node('fabless')" id="m4Node-fabless" class="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-800 border border-slate-700 text-slate-200 text-left flex justify-between transition">
+              <span>2. Fabless IC 設計公司</span> <span class="text-emerald-400">● 正常</span>
+            </button>
+            <button onclick="toggleM4Node('foundry')" id="m4Node-foundry" class="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-800 border border-slate-700 text-slate-200 text-left flex justify-between transition">
+              <span>3. TSMC 純代工製造</span> <span class="text-emerald-400">● 正常</span>
+            </button>
+            <button onclick="toggleM4Node('osat')" id="m4Node-osat" class="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-800 border border-slate-700 text-slate-200 text-left flex justify-between transition">
+              <span>4. OSAT 專業封裝測試</span> <span class="text-emerald-400">● 正常</span>
+            </button>
+            <button onclick="toggleM4Node('oem')" id="m4Node-oem" class="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-800 border border-slate-700 text-slate-200 text-left flex justify-between transition">
+              <span>5. 終端科技客戶 (OEMs)</span> <span class="text-emerald-400">● 正常</span>
+            </button>
+
+            <button onclick="resetM4All()" class="w-full mt-2 py-1.5 text-xs font-bold rounded-lg bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-500/40 transition">
+              🔄 恢復全球供應鏈全流通
+            </button>
+          </div>
+        </div>
+
+        <div class="console-box mt-4 p-4 rounded-xl border border-purple-500/30">
+          <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🧠 即時工程因果診斷儀 (Live Cause-and-Effect Console)</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【你現在的操作狀態】</span>
+              <p id="m4DiagCurrent" class="text-white font-medium">全產業鏈五大環節穩定串聯，晶圓產能滿載。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【⚖️ 雙向後果預警】</span>
+              <p id="m4DiagWhatIf" class="text-amber-300">👉 若切斷代工製造：全球 70% 高階智慧手機與 90% AI 算力晶片面臨斷供。<br>👉 若穩定運作：推動全球數位經濟蓬勃發展。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【💡 這代表什麼工程意義】</span>
+              <p class="text-slate-200">台積電的「純晶圓代工」承諾不與客戶競爭，成為全世界最值得信賴的半導體製造核心樞紐。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <button onclick="speakText('Pure-Play Foundry')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Pure-Play Foundry</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 專業積體電路代工</div>
+            </button>
+            <button onclick="speakText('Fabless')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Fabless</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[adj.] 無晶圓廠IC設計</div>
+            </button>
+            <button onclick="speakText('Turnkey Solution')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Turnkey Solution</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 一站式整合方案</div>
+            </button>
+            <button onclick="speakText('Supply Chain Resilience')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Resilience</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 供應鏈韌性</div>
+            </button>
+          </div>
+          <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <strong class="text-amber-300">💬 跨國工程簡報金句：</strong>
+              "As a pure-play foundry, we never compete with our customers, ensuring maximum IP security."
+            </div>
+            <button onclick="speakText('As a pure-play foundry, we never compete with our customers, ensuring maximum IP security.')" class="px-3 py-1 rounded bg-purple-700 hover:bg-purple-600 text-white shrink-0 text-xs">朗讀金句 🔊</button>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button onclick="jumpToQuizCategory(33)" class="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1 font-semibold">
+              <span>📝 前往 50 題測驗挑戰「純代工與全球生態系」題庫 (Q34~Q41) →</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== MODULE 5 ==================== -->
+    <section id="module-5" class="module-section space-y-4 hidden">
+      <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-purple-900/60 text-purple-300 border border-purple-500/40 text-xs font-bold mono">M5 • 動態危機應變</span>
+            <h2 class="text-lg sm:text-xl font-black text-white">無塵室 ISO Class 1 微塵污染 15 秒黃金應變 (Cleanroom Contamination Control)</h2>
+          </div>
+          <span class="text-xs text-amber-400 font-semibold">對齊展區：綠色製造與良率管理</span>
+        </div>
+        <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed mb-4">
+          💡 <strong class="text-purple-300">白話秒懂：</strong>在每立方呎只允許 1 顆 0.1μm 塵埃的無塵室中，一旦警報響起，你必須在 15 秒內啟動 FOUP 氣密關閉與負壓排氣，否則整批價值千萬元晶圓良率將瞬間暴跌至 0%！
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-8 bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col items-center justify-center">
+            <canvas id="m5Canvas" width="600" height="260" class="w-full max-w-full rounded-lg bg-slate-900"></canvas>
+            <div class="flex justify-between w-full px-2 pt-2 text-[11px] text-slate-400 mono">
+              <span>時間軸：<span id="m5TimeText">0.0 秒</span></span>
+              <span>微塵計數：<span id="m5ParticleCount" class="text-emerald-400">0.2 ppm (正常)</span></span>
+              <span>預估良率：<span id="m5YieldText" class="text-emerald-400 font-bold">99.4%</span></span>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 space-y-3 bg-slate-900/70 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+            <div class="space-y-2">
+              <span class="text-xs font-bold text-slate-200 block">三大應變防護措施：</span>
+              <button onclick="toggleM5Action('foup')" id="m5Btn-foup" class="w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-left flex justify-between transition">
+                <span>1. FOUP 晶圓盒自動密封</span> <span id="m5State-foup">未執行</span>
+              </button>
+              <button onclick="toggleM5Action('curtain')" id="m5Btn-curtain" class="w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-left flex justify-between transition">
+                <span>2. 氣簾高速層流隔離</span> <span id="m5State-curtain">未執行</span>
+              </button>
+              <button onclick="toggleM5Action('ulpa')" id="m5Btn-ulpa" class="w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-left flex justify-between transition">
+                <span>3. ULPA 負壓超淨排風</span> <span id="m5State-ulpa">未執行</span>
+              </button>
+            </div>
+
+            <div class="pt-2 flex gap-2">
+              <button onclick="startM5Crisis()" id="m5StartBtn" class="flex-1 py-2 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/30 transition">
+                🚨 觸發微塵洩漏危機
+              </button>
+              <button onclick="resetM5()" class="py-2 px-3 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
+                重設
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="console-box mt-4 p-4 rounded-xl border border-purple-500/30">
+          <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🧠 即時工程因果診斷儀 (Live Cause-and-Effect Console)</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【你現在的操作狀態】</span>
+              <p id="m5DiagCurrent" class="text-white font-medium">無塵室維持 ISO Class 1 基準環境，超純空氣層流平順向下流通。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【⚖️ 雙向後果預警】</span>
+              <p id="m5DiagWhatIf" class="text-amber-300">👉 若 15 秒內未密封 FOUP：微塵沉降於奈米電路，引發短路致命缺陷。<br>👉 若即時隔離：晶圓良率維持在 99% 以上高水準。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【💡 這代表什麼工程意義】</span>
+              <p class="text-slate-200">晶圓廠良率就是競爭力生命線。自動化搬送與秒級環境監控，是台積電製造品質領先全球的核心秘密。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <button onclick="speakText('Cleanroom')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Cleanroom</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 無塵室</div>
+            </button>
+            <button onclick="speakText('Particle Contamination')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Contamination</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 微塵污染</div>
+            </button>
+            <button onclick="speakText('Yield Rate')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Yield Rate</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 製程良率</div>
+            </button>
+            <button onclick="speakText('Front Opening Unified Pod')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>FOUP</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 前開式晶圓盒</div>
+            </button>
+          </div>
+          <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <strong class="text-amber-300">💬 跨國工程簡報金句：</strong>
+              "We maintained an ultra-low defect density in Fab 18, pushing the baseline yield to over 95 percent."
+            </div>
+            <button onclick="speakText('We maintained an ultra-low defect density in Fab 18, pushing the baseline yield to over 95 percent.')" class="px-3 py-1 rounded bg-purple-700 hover:bg-purple-600 text-white shrink-0 text-xs">朗讀金句 🔊</button>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button onclick="jumpToQuizCategory(8)" class="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1 font-semibold">
+              <span>📝 前往 50 題測驗挑戰「無塵室環境與良率」題庫 (Q9~Q17) →</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== MODULE 6 ==================== -->
+    <section id="module-6" class="module-section space-y-4 hidden">
+      <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-purple-900/60 text-purple-300 border border-purple-500/40 text-xs font-bold mono">M6 • 向量偏轉瞄準</span>
+            <h2 class="text-lg sm:text-xl font-black text-white">離子植入機磁場偏轉與摻雜深度瞄準台 (Ion Implantation Deflection)</h2>
+          </div>
+          <span class="text-xs text-amber-400 font-semibold">對齊展區：電晶體微觀物理</span>
+        </div>
+        <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed mb-4">
+          💡 <strong class="text-purple-300">白話秒懂：</strong>離子植入機就像微觀粒子加速大砲！利用勞侖茲力（Lorentz Force）計算磁場偏轉半徑，只有精準射穿狹縫，摻雜離子才能剛好打在晶圓特定深度形成 PN 接面。
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-8 bg-slate-950 rounded-xl p-3 border border-slate-800 flex flex-col items-center justify-center">
+            <canvas id="m6Canvas" width="600" height="260" class="w-full max-w-full rounded-lg bg-slate-900"></canvas>
+            <div class="flex justify-between w-full px-2 pt-2 text-[11px] text-slate-400 mono">
+              <span>偏轉半徑：<span id="m6RadiusText">12.5 cm</span></span>
+              <span>狹縫對準：<span id="m6SlitStatus" class="text-emerald-400 font-bold">完美穿透</span></span>
+              <span>植入深度：<span id="m6DepthText" class="text-purple-400">45 nm (接面正常)</span></span>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 space-y-4 bg-slate-900/70 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300 font-semibold">⚡ 加速電壓 (Accelerating Voltage)</span>
+                <span id="m6VoltVal" class="text-purple-400 font-mono font-bold">40 kV</span>
+              </div>
+              <input type="range" id="m6Volt" min="10" max="100" value="40" class="w-full h-2">
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300 font-semibold">🧲 分析磁鐵磁場強度 (B-Field)</span>
+                <span id="m6BVal" class="text-amber-400 font-mono font-bold">0.85 Tesla</span>
+              </div>
+              <input type="range" id="m6BField" min="20" max="180" value="85" class="w-full h-2">
+            </div>
+
+            <div class="flex gap-2">
+              <button onclick="setM6Dopant('boron')" id="m6Dopant-boron" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-purple-900/60 text-purple-200 border border-purple-500/50">
+                硼離子 (P-Type)
+              </button>
+              <button onclick="setM6Dopant('phosphorus')" id="m6Dopant-phos" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
+                磷離子 (N-Type)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="console-box mt-4 p-4 rounded-xl border border-purple-500/30">
+          <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>🧠 即時工程因果診斷儀 (Live Cause-and-Effect Console)</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【你現在的操作狀態】</span>
+              <p id="m6DiagCurrent" class="text-white font-medium">離子束精準穿透質譜分析狹縫，植入深度恰好落在 45 nm 設計規格。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【⚖️ 雙向後果預警】</span>
+              <p id="m6DiagWhatIf" class="text-amber-300">👉 若電壓過高：離子穿透力太強擊穿絕緣層。<br>👉 若磁場失配：雜質撞擊分析腔壁，接面濃度無法形成。</p>
+            </div>
+            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-slate-400 block mb-1">【💡 這代表什麼工程意義】</span>
+              <p class="text-slate-200">透過精密的磁場分離不同原子量同位素，半導體工藝展現了人類精確操控單一原子的極致工藝。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800/80">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+            <button onclick="speakText('Ion Beam')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Ion Beam</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 高能離子束</div>
+            </button>
+            <button onclick="speakText('Dopant')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Dopant</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 摻雜雜質原子</div>
+            </button>
+            <button onclick="speakText('Lorentz Force')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Lorentz Force</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] 勞侖茲力</div>
+            </button>
+            <button onclick="speakText('Junction Depth')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left transition group">
+              <div class="text-xs font-bold text-purple-300 group-hover:text-white flex justify-between">
+                <span>Junction Depth</span> <span>🔊</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">[n.] PN 接面深度</div>
+            </button>
+          </div>
+          <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/20 text-xs text-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <strong class="text-amber-300">💬 跨國工程簡報金句：</strong>
+              "We fine-tuned the accelerating voltage to control the junction depth within a 2-nanometer margin."
+            </div>
+            <button onclick="speakText('We fine-tuned the accelerating voltage to control the junction depth within a 2-nanometer margin.')" class="px-3 py-1 rounded bg-purple-700 hover:bg-purple-600 text-white shrink-0 text-xs">朗讀金句 🔊</button>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button onclick="jumpToQuizCategory(0)" class="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1 font-semibold">
+              <span>📝 前往 50 題測驗挑戰「半導體歷史與摩爾定律」題庫 (Q1~Q8) →</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== MODULE 7: 50 題精熟測驗與研習發照中心 ==================== -->
+    <section id="module-7" class="module-section space-y-6 hidden">
+      
+      <!-- 學生個人資訊與斷點續傳面板 -->
+      <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <span>👤 學員資料與雲端進度同步</span>
+              <span class="text-xs font-normal text-slate-400">（已連線至 Google 試算表雲端資料庫）</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">全數通過 50 題精熟測驗並完成 50 字反思心得後，系統將自動核發黑金電子研習證書至您的信箱。</p>
+          </div>
+          <button id="resumeBtn" onclick="handleResumeProgress()" class="px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 border border-amber-500/40 transition flex items-center justify-center gap-1.5 self-start md:self-auto">
+            <span>🔄 輸入姓名接續進度</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">班級與座號</label>
+            <input type="text" id="classNum" placeholder="例如：機電三甲 01" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">真實姓名 <span class="text-red-400">*</span></label>
+            <input type="text" id="studentName" placeholder="例如：謝小軒" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">收取證書 Email <span class="text-purple-400">*</span></label>
+            <input type="email" id="studentEmail" placeholder="例如：student@school.edu.tw" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition">
+          </div>
+        </div>
+      </div>
+
+      <!-- 測驗進度總覽面板 -->
+      <div class="glass-card rounded-2xl p-4 sm:p-5 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div class="flex items-center gap-4">
+            <div>
+              <span class="text-xs text-slate-400 block">精熟進度</span>
+              <span class="text-xl sm:text-2xl font-black text-purple-400 mono">
+                <span id="solvedCount">0</span> <span class="text-sm font-normal text-slate-500">/ 50 題</span>
+              </span>
+            </div>
+            <div class="h-8 w-px bg-slate-700/60"></div>
+            <div>
+              <span class="text-xs text-slate-400 block">累計耗時</span>
+              <span id="timerText" class="text-lg sm:text-xl font-bold text-slate-200 mono">00:00</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-semibold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              100% 精熟模式（答對推進）
+            </span>
+          </div>
+        </div>
+
+        <!-- 進度條 -->
+        <div class="w-full bg-slate-900/80 rounded-full h-2.5 overflow-hidden border border-slate-800 mb-4">
+          <div id="progressBar" class="bg-gradient-to-r from-purple-500 to-emerald-400 h-2.5 rounded-full transition-all duration-300 w-0"></div>
+        </div>
+
+        <!-- 50 題題目快速跳轉矩陣 -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex justify-between items-center">
+            <span>題目地圖 (Navigation Grid)</span>
+            <span class="text-[10px] text-slate-500">點擊已解鎖題號可直接複習</span>
+          </div>
+          <div id="navGrid" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 max-h-36 overflow-y-auto p-1 bg-slate-950/50 rounded-xl border border-slate-800"></div>
+        </div>
+      </div>
+
+      <!-- 核心作答卡片 -->
+      <div id="quizCard" class="glass-card rounded-2xl p-5 sm:p-8 shadow-2xl relative transition-all">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div class="flex items-center gap-2">
+            <span id="qBadge" class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-purple-900/60 border border-purple-500/40 text-purple-300">
+              Q1 / 50
+            </span>
+            <span id="qCategory" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
+              半導體歷史與摩爾定律演進
+            </span>
+          </div>
+          <span class="text-xs text-slate-400 font-mono" id="qStatusIndicator">未作答</span>
+        </div>
+
+        <h3 id="questionText" class="text-base sm:text-xl font-bold text-white leading-relaxed mb-6">
+          載入題目中...
+        </h3>
+
+        <div id="optionsContainer" class="space-y-3"></div>
+
+        <div id="explanationBox" class="mt-6 p-4 rounded-xl border hidden transition-all">
+          <div class="flex items-start gap-3">
+            <span id="expIcon" class="text-xl">💡</span>
+            <div class="flex-1">
+              <h4 id="expTitle" class="text-sm font-bold mb-1">外行人秒懂白話詳解</h4>
+              <p id="expText" class="text-xs sm:text-sm leading-relaxed text-slate-200"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-800 flex justify-between items-center">
+          <button id="prevBtn" onclick="navigateQuestion(-1)" class="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition disabled:opacity-30 disabled:pointer-events-none">
+            ← 上一題
+          </button>
+          <button id="nextBtn" onclick="navigateQuestion(1)" class="px-5 py-2 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30 transition disabled:opacity-30 disabled:pointer-events-none">
+            下一題 →
+          </button>
+        </div>
+      </div>
+
+      <!-- 50 題完全精熟後解鎖：反思心得與證書領取區 -->
+      <div id="completionSection" class="glass-card rounded-2xl p-6 sm:p-8 border-2 border-emerald-500/40 shadow-2xl space-y-6 hidden">
+        <div class="text-center space-y-2">
+          <div class="inline-flex p-3 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mb-2">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white">🎉 恭喜達成 50 題 100% 精熟標準！</h2>
+          <p class="text-sm text-slate-300 max-w-xl mx-auto">
+            你已完整掌握台積創新館半導體歷史、晶圓製造、EUV 微影、先進封裝與跨國職場英文核心素養。請撰寫參訪前反思心得，領取電子研習證書！
+          </p>
+        </div>
+
+        <div class="bg-slate-900/90 rounded-xl p-4 sm:p-5 border border-slate-700 space-y-3">
+          <div class="flex justify-between items-center">
+            <label class="text-sm font-bold text-purple-300">
+              ✍️ 參訪前反思與學習心得 <span class="text-red-400">*</span>
+            </label>
+            <span id="charCount" class="text-xs font-mono text-slate-400">0 / 50 字以上</span>
+          </div>
+          <textarea id="reflectionInput" rows="4" placeholder="請分享在本次 50 題與模擬沙盒中，哪一項半導體技術或商業模式最讓你震撼？你最期待在台積創新館實體現場親眼看到什麼展區？（至少 50 字）" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"></textarea>
+          <p id="charAlert" class="text-xs text-amber-400 hidden">⚠️ 還差 <span id="charsLeft">50</span> 字即可達到 50 字認證門檻！</p>
+        </div>
+
+        <div class="text-center pt-2">
+          <button id="submitAllBtn" onclick="submitFinalCertificate()" class="w-full sm:w-auto px-8 py-3.5 text-sm font-extrabold rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-xl shadow-purple-600/30 transition transform hover:-translate-y-0.5">
+            🚀 提交心得並自動寄送黑金電子研習證書
+          </button>
+        </div>
+
+        <div id="submitResultBox" class="p-4 rounded-xl bg-slate-900 border border-purple-500/40 text-center hidden">
+          <p id="submitResultMsg" class="text-sm font-bold text-emerald-400"></p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 全域 ESP PREP 口說組裝器 -->
+    <section class="glass-card rounded-2xl p-4 sm:p-6 shadow-xl border border-amber-500/30">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-amber-400 text-base">🎙️</span>
+          <h3 class="text-sm sm:text-base font-bold text-white">半導體跨國口說組裝器 (PREP Oral Pitch Assembler)</h3>
+        </div>
+        <span class="text-xs text-amber-300 font-mono">參訪現場實戰提問必備</span>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">
+        在台積創新館向國際導覽人員提問或工程簡報時，善用 <strong>Point (結論) → Reason (原因) → Example (實例) → Point (重申)</strong> 四步口說公式：
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
+        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+          <span class="text-purple-400 font-bold block mb-1">1. Point (觀點)</span>
+          <p class="text-slate-300 text-[11px]">"In my view, TSMC's pure-play foundry model is the bedrock of modern AI hardware."</p>
+        </div>
+        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+          <span class="text-purple-400 font-bold block mb-1">2. Reason (原因)</span>
+          <p class="text-slate-300 text-[11px]">"Because it allows fabless tech innovators to focus solely on architecture without capital risks."</p>
+        </div>
+        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+          <span class="text-purple-400 font-bold block mb-1">3. Example (實例)</span>
+          <p class="text-slate-300 text-[11px]">"For instance, leading AI accelerators rely entirely on TSMC CoWoS advanced packaging."</p>
+        </div>
+        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+          <span class="text-purple-400 font-bold block mb-1">4. Point (總結)</span>
+          <p class="text-slate-300 text-[11px]">"Therefore, trusted collaboration remains the true catalyst for semiconductor innovation."</p>
+        </div>
+      </div>
+
+      <div class="mt-3 flex justify-end">
+        <button onclick="speakText('In my view, TSMC\'s pure-play foundry model is the bedrock of modern AI hardware. Because it allows fabless innovators to focus solely on architecture without capital risks. For instance, leading AI accelerators rely entirely on TSMC CoWoS packaging. Therefore, trusted collaboration remains the true catalyst for innovation.')" class="px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white transition flex items-center gap-1.5">
+          <span>朗讀完整 PREP 示範 🔊</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 手機端底部浮動快速切換列 (7 大分頁) -->
+  <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 border-t border-purple-900/50 backdrop-blur-lg px-1 py-2 flex justify-around">
+    <button onclick="switchModule(1)" id="m-tab-1" class="text-center text-[10px] text-purple-400 font-bold flex flex-col items-center">
+      <span>🔬</span> <span>EUV</span>
+    </button>
+    <button onclick="switchModule(2)" id="m-tab-2" class="text-center text-[10px] text-slate-400 font-bold flex flex-col items-center">
+      <span>🔐</span> <span>SOP</span>
+    </button>
+    <button onclick="switchModule(3)" id="m-tab-3" class="text-center text-[10px] text-slate-400 font-bold flex flex-col items-center">
+      <span>🔍</span> <span>CoWoS</span>
+    </button>
+    <button onclick="switchModule(4)" id="m-tab-4" class="text-center text-[10px] text-slate-400 font-bold flex flex-col items-center">
+      <span>⚡</span> <span>供應鏈</span>
+    </button>
+    <button onclick="switchModule(5)" id="m-tab-5" class="text-center text-[10px] text-slate-400 font-bold flex flex-col items-center">
+      <span>⏱️</span> <span>微塵</span>
+    </button>
+    <button onclick="switchModule(6)" id="m-tab-6" class="text-center text-[10px] text-slate-400 font-bold flex flex-col items-center">
+      <span>🎯</span> <span>植入</span>
+    </button>
+    <button onclick="switchModule(7)" id="m-tab-7" class="text-center text-[10px] text-amber-400 font-extrabold flex flex-col items-center">
+      <span>🏆</span> <span>測驗</span>
+    </button>
+  </nav>
+
+  <script>
+    // 雲端 GAS Web App 後端連線網址
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzppbV8jsJ7X5QqEAweu7y11vzbw23cCSgrgXnTo3sdMGdN8Z-IT8DXr5Z3GZUHKS1ayg/exec';
+
+    // 內建 50 題完整備援題庫
+    const FALLBACK_QUESTIONS = [
+  {
+    "id": 1,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "摩爾定律（Moore’s Law）是由英特爾共同創辦人戈登·摩爾提出，其核心觀察與預測內容為何？",
+    "opts": [
+      "微處理晶片上可容納的電晶體數量約每隔十八至二十四個月便會倍增",
+      "晶圓製造廠的建廠成本每隔三年將會翻倍增加以容納更龐大設備",
+      "電腦微處理器的運作時脈頻率每隔一年便會提升一倍以加速整體運算",
+      "單一矽晶圓在製造過程中所消耗的總電量每隔兩年將會呈現減半趨勢"
+    ],
+    "ans": 0,
+    "exp": "摩爾定律是半導體產業的經驗法則，指出積體電路上的電晶體數量約每18至24個月翻倍，帶來更高效能與更低成本。"
+  },
+  {
+    "id": 2,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "在台積創新館第一展區中，積體電路（IC）的發明被視為現代資訊社會基石，其最大工程貢獻為何？",
+    "opts": [
+      "徹底淘汰所有傳統機械開關讓家用電器運轉速度提升十倍以上",
+      "將大量電晶體與電路微縮整合在微小矽晶片上大幅提升運算效能",
+      "完全取代傳統蓄電池作為航太設備與電動載具不可或缺的動力來源",
+      "利用純金屬線路直接傳遞無線電波信號以消除通訊時產生的延遲"
+    ],
+    "ans": 1,
+    "exp": "積體電路把成千上萬的微型元件濃縮在一小片矽晶圓上，解決了過去龐大真空管耗電、散熱差且體積巨大的問題。"
+  },
+  {
+    "id": 3,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "隨著先進製程節點由微米（μm）推進至奈米（nm），工程界面臨的主要物理限制為何？",
+    "opts": [
+      "空氣中的氮氣分子在常溫常壓狀態下會自發性穿透晶圓氧化保護層",
+      "矽晶圓本體因受地球重力吸引而產生不可逆的微觀結構彎曲變形",
+      "量子穿隧效應導致微型閘極產生嚴重漏電流與晶片異常發熱現象",
+      "光子在真空中傳遞時因波長過長而無法穿越傳統無塵室防護玻璃"
+    ],
+    "ans": 2,
+    "exp": "當電晶體小到只有幾個原子大小時，電子會像穿透牆壁一樣產生量子穿隧，造成漏電與過熱，促使新架構如 FinFET 與 GAA 的誕生。"
+  },
+  {
+    "id": 4,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "台積公司在推動「超越摩爾定律（More than Moore）」的發展策略中，最核心的技術主軸為何？",
+    "opts": [
+      "全面停止微影製程研發並將所有工廠完全轉移至傳統成熟節點運作",
+      "改用木質纖維複合材料取代傳統高純度高硬度單晶矽作為晶圓基板",
+      "強制將全球所有微處理晶片的運作工作電壓由五伏特提高至十二伏特",
+      "透過先進封裝與異質整合將不同功能的微小晶片立體堆疊於一體"
+    ],
+    "ans": 3,
+    "exp": "超越摩爾定律不只單純縮小單一晶片，而是利用如 CoWoS 等先進封裝把運算核心、記憶體等多晶片打包在一起提升整體效能。"
+  },
+  {
+    "id": 5,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "在電晶體微縮演進過程中，從傳統平面 MOSFET 轉向立體結構 FinFET（鰭式場效電晶體）的主要目的為何？",
+    "opts": [
+      "增加晶片厚度以強化其在強烈震動衝擊環境下的抗物理斷裂能力",
+      "由三面立體包覆導電通道以大幅增強閘極控制力並抑制漏電流現象",
+      "減少製造過程所需的昂貴光罩數量以大幅降低客戶晶片開模成本",
+      "利用凸起鰭片結構直接與空氣接觸達到百分之百被動散熱降溫效果"
+    ],
+    "ans": 1,
+    "exp": "平面電晶體縮小後閘極抓不住電子而漏電；FinFET 就像用手掌從三面把水管捏緊，有效防漏電並提升開關切換速度。"
+  },
+  {
+    "id": 6,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "台積公司進入 2 奈米（N2）製程節點時，全面導入的新一代電晶體架構稱為何種技術？",
+    "opts": [
+      "GAA（環繞閘極電晶體，以奈米片結構四面全方位包覆導電通道）",
+      "BJT（雙極性接面電晶體，專門應用於高功率重電設備放大電流）",
+      "Relay（微機電繼電器，透過微型機械臂物理吸附實現電路通斷）",
+      "Vacuum Tube（奈米級微型真空管，完全排除所有半導體固態接面）"
+    ],
+    "ans": 0,
+    "exp": "2奈米採用的 GAA (Gate-All-Around) 電晶體，閘極像套筒一樣把奈米片四面完全包覆，漏電控制力比 FinFET 更為強大卓越。"
+  },
+  {
+    "id": 7,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "半導體製造所使用的矽晶圓材料，主要是從大自然中的哪種常見礦物經過精煉提純而來？",
+    "opts": [
+      "黃銅礦（主要化學成分為二硫化銅鐵，經由反射爐冶煉提煉高純度銅）",
+      "鋁土礦（主要化學成分為氧化鋁，經由霍爾法電解熔融鹽提煉金屬鋁）",
+      "石英砂（主要化學成分為二氧化矽，經高溫還原提煉為高純度多晶矽）",
+      "方解石（主要化學成分為碳酸鈣，經高溫煅燒分解產生純淨氧化鈣）"
+    ],
+    "ans": 2,
+    "exp": "矽來自地表最豐富的二氧化矽（沙子/石英），經過高溫冶煉與化學提純，純度高達99.999999999%（11個9）才符合半導體等級。"
+  },
+  {
+    "id": 8,
+    "cat": "半導體歷史與摩爾定律演進",
+    "q": "半導體材料之所以被稱為「半導體」，其核心的電氣物理特性為何？",
+    "opts": [
+      "在任何溫度環境與極端條件下其電阻值永遠固定不變且無法被外力調整",
+      "在高溫加熱狀態下會自動釋放出大量可燃氣體以防止電路過熱燃燒",
+      "通電時僅能允許超高頻率交流電通過而完全百分之百阻斷所有直流電",
+      "導電能力介於導體與絕緣體之間且可透過摻雜微量雜質精確調控導電率"
+    ],
+    "ans": 3,
+    "exp": "半導體在純淨時導電極差，但只要摻入幾顆特定原子（摻雜），就能像精密的電子水閥一樣受控導電，成為開關訊號的核心。"
+  },
+  {
+    "id": 9,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "半導體晶圓廠無塵室（Cleanroom）嚴格要求人員進出穿著無塵衣（Bunny Suit），其主要防護目的為何？",
+    "opts": [
+      "防止人體脫落的皮屑毛髮與微塵微粒落入晶圓表面造成嚴重晶片缺陷",
+      "保護工程師免於受到廠房內高強度的伽馬射線與宇宙射線直接照射以確保運作穩定",
+      "避免無塵室過於寒冷的超低溫恆溫環境導致操作技術人員凍傷生病",
+      "強化工程師身體對高壓電弧意外觸碰時的抗靜電絕緣與防火保護力"
+    ],
+    "ans": 0,
+    "exp": "晶片線寬僅幾奈米，人體掉落的一根毛髮或皮屑對晶片來說就像一塊巨石砸在高速公路上，因此穿無塵衣是為了保護晶圓不受人體污染。"
+  },
+  {
+    "id": 10,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "現代先進晶圓代工廠採用的晶圓規格主流尺寸為 12 吋（直徑 300 mm），其相比 8 吋晶圓的最大經濟優勢為何？",
+    "opts": [
+      "晶圓直徑加大後可直接使用一般未經純化之河川自來水進行超純水清洗",
+      "單片晶圓面積增加超過兩倍使單次製造流程能切割產出更多可用晶片",
+      "厚度大幅增加十倍使其在長途國際空運搬運過程中完全不會碎裂損壞",
+      "單片晶圓所需的高階光罩曝光次數可以由二十次直接縮減為單次曝光"
+    ],
+    "ans": 1,
+    "exp": "圓形面積與半徑平方成正比，12吋晶圓可用面積是8吋晶圓的2.25倍，能大幅分攤生產光罩與機台工時成本，大幅提升經濟規模。"
+  },
+  {
+    "id": 11,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "在無塵室內用於密封搬送 25 片 12 吋晶圓的高科技氣密載具稱作什麼？",
+    "opts": [
+      "AGV（無軌自動導引車，專門用於在廠房走道運送大型重型機台零件）",
+      "OHT（空中走行式無人搬運車，專門懸掛在天花板軌道高速巡迴行駛）",
+      "SMIF（標準機械介面箱，專門用於八吋以下舊型成熟產線晶圓儲存盒）",
+      "FOUP（前開式晶圓傳送盒，內部充填高純氮氣以隔絕微塵與化學污染）"
+    ],
+    "ans": 3,
+    "exp": "FOUP (Front Opening Unified Pod) 就像晶圓的隨身迷你無塵防空洞，內部充填惰性氣體，確保晶圓在機台轉移間不吸附空氣雜質。"
+  },
+  {
+    "id": 12,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "化學機械研磨（CMP, Chemical Mechanical Planarization）工序在晶圓製造中的核心功用為何？",
+    "opts": [
+      "利用金剛石高轉速砂輪將晶圓邊緣多餘不平整的廢料快速切割修整",
+      "利用超高壓高純氫氣將晶圓表面的重金屬氧化膜完全還原為液態水",
+      "利用研磨液與拋光墊化學反應及物理摩擦將晶圓表面完全平坦化",
+      "利用高溫火焰噴槍將晶圓背面的微細刮痕快速熔融填補以消除應力"
+    ],
+    "ans": 2,
+    "exp": "多層電路堆疊時表面會凹凸不平，CMP 就像微觀世界的超級熨斗，邊用化學液軟化表面邊用研磨墊拋光，提供奈米級平整度以便後續曝光。"
+  },
+  {
+    "id": 13,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "在晶圓製造八大工序中，「熱氧化（Thermal Oxidation）」步驟的主要目的為何？",
+    "opts": [
+      "將矽晶圓完全加熱至熔點以上使其重新結晶為具備多晶結構之太陽能板",
+      "在矽晶圓表面透過高溫反應生成一層緻密且均勻的二氧化矽絕緣介電層",
+      "利用氧氣分子強烈腐蝕金屬線路以製造出微小且對稱的奈米散熱導氣孔",
+      "使矽晶圓表面與大氣氧氣完全中和以徹底消除晶圓生產時所有殘留電荷"
+    ],
+    "ans": 1,
+    "exp": "將矽晶圓放入攝氏千度高溫爐通入氧氣，表面會長出一層極為均勻純淨的二氧化矽，如同晶片內部的天然電氣絕緣防護衣。"
+  },
+  {
+    "id": 14,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "薄膜沉積（Thin Film Deposition）技術中的 CVD（化學氣相沉積）其反應原理為何？",
+    "opts": [
+      "通入前驅氣體在加熱的晶圓表面發生化學分解與結合以沉積固態薄膜",
+      "利用高能離子直接轟擊純金屬靶材將金屬原子物理濺鍍至晶圓冷表面",
+      "將晶圓直接浸泡於常溫濃硫酸溶劑中透過電鍍化學沉澱生長出導電層",
+      "利用極低溫液態氮將大氣中的氣體分子直接凝結固化在晶圓溝槽底部"
+    ],
+    "ans": 0,
+    "exp": "CVD (Chemical Vapor Deposition) 讓含矽或金屬的特殊氣體流入反應室，在高溫晶圓表面起化學反應，長出一層均勻厚度的薄膜。"
+  },
+  {
+    "id": 15,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "乾式蝕刻（Dry Etching / Plasma Etching）相比於傳統濕式蝕刻，其在先進製程中最顯著的技術優勢為何？",
+    "opts": [
+      "能夠百分之百消除所有晶圓邊緣產生的邊界效應且完全無需光阻膜保護以確保運作穩定",
+      "所使用的化學電漿氣體完全無毒且可直接排入大氣中無需任何環保洗滌",
+      "完全無需消耗任何電能即可在常溫常壓環境下自發性完成深層化學雕刻",
+      "具備極佳各向異性（Anisotropy）能垂直切削出極陡峭且微細的電路溝槽"
+    ],
+    "ans": 3,
+    "exp": "濕蝕刻像水泡海綿會四面亂咬（各向同性），乾蝕刻利用電漿離子垂直往下轟擊（各向異性），才能刻出直挺挺的奈米級深窄溝槽。"
+  },
+  {
+    "id": 16,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "半導體無塵室的黃光微影區（Yellow Room）之所以全面採用黃色照明，其物理原因為何？",
+    "opts": [
+      "黃色光線能讓操作工程師視覺放鬆並有效降低長時間輪班產生的眼部疲勞",
+      "黃色波長的光子能主動中和晶圓表面殘留的靜電防止微塵微粒被吸附附著",
+      "防止白光與日光中的高能量紫外光或藍光使未曝光的光阻劑提前發生感光",
+      "黃光照明設備的耗電量僅為傳統白光日光燈的三分之一以落實綠色製造"
+    ],
+    "ans": 2,
+    "exp": "光阻劑對波長較短的紫外光與藍光極度敏感，因此黃光區嚴禁藍紫光，改用波長較長、能量較低的黃光照明，防止感光材料意外曝光報廢。"
+  },
+  {
+    "id": 17,
+    "cat": "晶圓製造工藝與無塵室環境",
+    "q": "離子植入（Ion Implantation）工序在半導體元件製造中主要擔負什麼關鍵功能？",
+    "opts": [
+      "將高能量雜質離子（如硼、磷、砷）精確注入矽晶格特定深度改變導電型態",
+      "利用帶電離子流高速沖刷晶圓表面以徹底清除拋光後殘留的微小二氧化矽顆粒",
+      "在晶圓背部植入微量放射性同位素以提供晶片在出廠後終身追蹤辨識的防偽條碼",
+      "利用離子磁場偏轉效應自動修正晶圓在切割過程中產生的微觀物理晶格應力缺陷"
+    ],
+    "ans": 0,
+    "exp": "離子植入機像一台超微型粒子加速器，把摻雜原子加速後打進矽晶圓特定深度，創造出 P 型或 N 型半導體區域，構築電晶體的核心接面。"
+  },
+  {
+    "id": 18,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "極紫外光微影（EUV Lithography）技術所使用的光源波長為多少？",
+    "opts": [
+      "193 nm（氟化氬 DUV 浸潤式深紫外光微影機台光源）",
+      "13.5 nm（由高能雷射轟擊錫液滴電漿放電極紫外光）",
+      "365 nm（傳統成熟製程廣泛使用之高壓汞燈微影光源）",
+      "405 nm（藍光雷射光碟機讀取頭標準工作之短波長光源）"
+    ],
+    "ans": 1,
+    "exp": "EUV 光源波長僅 13.5 nm，是用高能雷射轟擊微小液態錫滴產生電漿放電發出的極短波長光，是雕刻 7nm 以下極致微細線路的關鍵。"
+  },
+  {
+    "id": 19,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "EUV 微影機台內部必須全程維持在極高真空（High Vacuum）環境，其根本原因為何？",
+    "opts": [
+      "避免高溫機台內部零件接觸空氣氧化產生濃煙損壞光罩系統",
+      "防止任何空氣分子（如氮氣與氧氣）強烈吸收極紫外光能量",
+      "利用真空絕熱原理消除機台運轉時產生的微震動以穩定光學對焦",
+      "使光阻劑中的揮發性有機溶劑能以十倍速度在晶圓表面快速固化"
+    ],
+    "ans": 2,
+    "exp": "EUV 光子能量極高但穿透力極弱，連普通的空氣分子都能輕易把它們吸收光，因此整個機台光路系統必須維持在極度純淨的超高真空中。"
+  },
+  {
+    "id": 20,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "傳統 DUV 微影可以使用穿透式石英透鏡聚焦，但 EUV 機台光學系統為何只能全部使用反射鏡（Mirrors）？",
+    "opts": [
+      "因為反射鏡具備天生防靜電特性完全不會吸附空氣中漂浮的微米級粉塵顆粒以確保運作穩定",
+      "因為反射鏡的製造成本僅為石英透鏡的十分之一以降低設備總體擁有成本",
+      "因為石英透鏡在受到高能電子撞擊後會自發性釋放大量劇毒揮發性化學氣體",
+      "因為所有已知天然或人造光學玻璃介質對 13.5 nm 極紫外光皆呈現強烈吸收"
+    ],
+    "ans": 3,
+    "exp": "幾乎所有透明玻璃對 13.5nm EUV 光來說都是「黑體」會直接吃光，因此必須由鉬（Mo）與矽（Si）交替鍍膜的奈米多層反射鏡來反彈聚焦。"
+  },
+  {
+    "id": 21,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "瑞利準則（Rayleigh Criterion）公式 R = k1 * (λ / NA) 中，半導體工程界為了縮小最小解析極限 R，主要採取的物理手段為何？",
+    "opts": [
+      "增加製程因子 k1 數值並同時提高曝光所使用的光源波長 λ",
+      "縮減光源波長 λ（如轉向 EUV）並提升光學系統數值孔徑 NA",
+      "將微影機台內部環境溫度提高至攝氏四百度以加速光化學反應以確保運作穩定",
+      "將光阻劑厚度增加十倍以上以阻擋多餘繞射雜散光的邊緣干擾"
+    ],
+    "ans": 1,
+    "exp": "雕刻極限 R 越小代表線寬越細。由公式可知，把分子波長 λ 變小（如 EUV 13.5nm）或把分母數值孔徑 NA 變大，刻出的線路就越細緻。"
+  },
+  {
+    "id": 22,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "台積電研發的高數值孔徑 EUV（High-NA EUV）技術，其數值孔徑由原本的 0.33 提升至多少？",
+    "opts": [
+      "0.55（大幅提升聚光能力以支援 2nm 以下極致微細製程節點）",
+      "0.25（縮減光學反射鏡體積以容納更多傳送機械手臂並納入標準規範）",
+      "0.85（完全達到空氣極限折射率並導入高壓水冷卻系統）",
+      "1.35（採用特殊高折射率化學液體進行超深層浸潤式曝光）"
+    ],
+    "ans": 0,
+    "exp": "High-NA EUV 將數值孔徑從 0.33 躍升至 0.55，鏡頭直徑更大、聚光角度更陡峭，能單次曝光成形極限幾何圖形，省去複雜的多重曝光工序。"
+  },
+  {
+    "id": 23,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "在微影製程中，安裝於光罩上方、用於阻擋漂浮微塵直接掉落沉積在電路圖案上的極薄保護膜稱作什麼？",
+    "opts": [
+      "Reticle Box（光罩儲存盒，用於跨廠區長途運輸時保護光罩防震動並納入標準規範）",
+      "Chamber（反應真空腔體，提供高真空與等離子體均勻分布之工作空間）",
+      "Chuck（晶圓靜電吸盤，利用高壓靜電力將晶圓平整牢固吸附於載台上）",
+      "Pellicle（光罩保護膜，具備高 EUV 透光率與優異耐高溫散熱性能）"
+    ],
+    "ans": 3,
+    "exp": "Pellicle 是繃在光罩上方幾毫米處的奈米厚度薄膜，微塵若掉落只會停在膜上而不在焦平面上，避免在晶圓上印出一模一樣的重複性缺陷。"
+  },
+  {
+    "id": 24,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "林本堅博士（Burn Lin）在台積電任職期間所提出的哪項劃時代發明，成功延續摩爾定律並讓 193nm 浸潤式微影成為全球主流？",
+    "opts": [
+      "利用乾冰超音速氣流直接吹除晶圓微塵的免水洗環保表面清潔技術",
+      "全面將晶圓直徑由八吋擴大至十六吋以降低邊緣廢品率的晶圓擴徑技術",
+      "在透鏡與晶圓之間注入高純度純水（折射率 n=1.44）的浸潤式微影技術",
+      "利用紅外線熱成像技術即時預測晶圓內部電路開關速度的熱量測技術以確保運作穩定"
+    ],
+    "ans": 2,
+    "exp": "林本堅博士大膽提出用水取代空氣當介質，利用水的折射率 1.44 縮短光線有效波長，帶領全球半導體以最低成本突破奈米瓶頸，震撼業界。"
+  },
+  {
+    "id": 25,
+    "cat": "EUV 微影與極致先進製程",
+    "q": "在 EUV 微影曝光過程中，若曝光能量劑量（Exposure Dose）設定過高，最容易引發下列何種晶圓品質問題？",
+    "opts": [
+      "光阻劑因吸收過量能量導致圖形過度溶出、線寬變細甚至圖案倒塌",
+      "晶圓表面單晶矽原子在常溫狀態下自發性蒸發形成微米級深坑孔洞",
+      "機台內部反射鏡表面塗層被激發產生二次 X 光射線損壞對準系統",
+      "晶圓本體因光子撞擊產生嚴重靜電累積並將周遭金屬零件完全吸附"
+    ],
+    "ans": 0,
+    "exp": "曝光劑量就像烤麵包的火候：火太小圖案顯影不完全，火太大（過曝）光阻會被過度溶解，導致細窄的奈米線條太細而直接坍塌斷裂。"
+  },
+  {
+    "id": 26,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "台積公司引領全球 AI 與高效能運算（HPC）晶片革命的核心封裝技術「CoWoS」，其完整英文全名為何？",
+    "opts": [
+      "Core-on-Wire-on-Silicon（金屬導線直接焊接於矽核心晶片之平面封裝）",
+      "Chip-on-Wafer-on-Substrate（晶片先封裝至晶圓矽中介層再整合至基板）",
+      "Circuit-on-Wafer-on-System（微電路直接印刷在整片系統晶圓之封裝技術）",
+      "Component-on-Waveguide-on-Socket（光波導元件整合至中央插座模組架構）"
+    ],
+    "ans": 1,
+    "exp": "CoWoS 先把多顆晶片（GPU + HBM）緊密排在矽中介層（Chip-on-Wafer），再一起打包固定到載板上（on-Substrate），是 AI 伺服器晶片的標配。"
+  },
+  {
+    "id": 27,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "在 CoWoS 等 2.5D 先進封裝架構中，矽中介層（Silicon Interposer）所扮演的最核心關鍵角色為何？",
+    "opts": [
+      "將運算晶片輸出的高壓直流電直接變壓為十萬伏特交流電以節省能耗",
+      "作為冷卻液體流通的物理水道以取代外部所有大型風扇與散熱鰭片",
+      "提供極高密度的微細重佈線層（RDL），讓運算晶片與 HBM 能超高速互連",
+      "在晶片之間建立金屬隔絕艙以百分之百完全吸收所有雜散無線電磁波以確保運作穩定"
+    ],
+    "ans": 2,
+    "exp": "矽中介層就像一塊超高密度的微型立交橋，在 GPU 與 HBM 記憶體之間鋪設上萬條超密細線，讓資料傳輸頻寬暴增且延遲極低。"
+  },
+  {
+    "id": 28,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "現代 AI 晶片模組中緊鄰 GPU 運算核心的高頻寬記憶體（HBM），其內部結構是如何實現高傳輸頻寬的？",
+    "opts": [
+      "採用雙倍厚度的印刷電路板將訊號傳遞速率透過物理加壓提升五倍以上以確保運作穩定",
+      "利用超長金屬金線以環形纏繞方式將記憶體晶片與處理器外部針腳焊接",
+      "將記憶體儲存單元全數改以微型發光二極體透過自由空間紅外線通訊傳輸",
+      "將多層 DRAM 晶片垂直堆疊，並透過數千根矽穿孔（TSV）立體縱向貫穿互連"
+    ],
+    "ans": 3,
+    "exp": "HBM (High Bandwidth Memory) 像立體公寓一樣把多層 DRAM 疊起來，中間用數千根細小的矽穿孔 (TSV) 垂直打通，資料通道比傳統記憶體寬數百倍。"
+  },
+  {
+    "id": 29,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "先進封裝與 3D IC 技術中常提到的「TSV」，其英文全稱與工程定義為何？",
+    "opts": [
+      "Thermal Silicon Vent（散熱排氣孔，專門導引晶片內部過熱空氣逸散）",
+      "Through-Silicon Via（矽穿孔，垂直貫穿矽晶圓厚度的高密度立體導電通道）",
+      "Total Solder Volume（銲錫總體積，計算晶片封裝載板銲球耐疲勞強度指標）",
+      "True Silicon Voltage（真實矽電壓，量測電晶體閘極擊穿電壓之測試規格）"
+    ],
+    "ans": 1,
+    "exp": "TSV (Through-Silicon Via) 是垂直穿透整片矽晶片的金屬電梯，讓上下層晶片能用最短的垂直距離直接相連，訊號跑得快又省電。"
+  },
+  {
+    "id": 30,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "小晶片（Chiplet）架構相較於傳統單晶片系統（Monolithic SoC），最顯著的商業與技術優勢為何？",
+    "opts": [
+      "可將大晶片拆解為不同小功能模組，分別採用最符合成本效益之製程製造以提高良率",
+      "組裝後的整體晶片封裝體積與耗電量必定比單晶片系統縮減八成以上以確保運作穩定",
+      "完全無需撰寫任何微控制器驅動程式即可讓各小晶片自動識別並完美溝通",
+      "使晶片徹底免除散熱需求能在攝氏一百五十度高溫環境下永不降頻工作"
+    ],
+    "ans": 0,
+    "exp": "如果把所有功能刻在一顆巨大晶片上，一個小瑕疵就會讓整顆報廢（良率低）；Chiplet 像樂高積木，把運算、記憶、通訊分開做好再拼裝，大幅省錢省工。"
+  },
+  {
+    "id": 31,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "台積公司推出的全方位 3D 晶圓級異質整合技術平台統稱為何？",
+    "opts": [
+      "TSMC-PGA（針腳格狀陣列平台，主要提供傳統伺服器處理器插座連接）",
+      "TSMC-DIP（雙列直插式封裝平台，專為早期八位元微處理器設計）",
+      "TSMC-SoIC（系統整合晶片技術，支援 3D 晶片垂直直接鍵合堆疊）",
+      "TSMC-QFP（方型扁平封裝平台，廣泛用於汽車中控按鍵之低速晶片並納入標準規範）"
+    ],
+    "ans": 2,
+    "exp": "TSMC-SoIC (System-on-Integrated-Chips) 透過無凸塊（Bump-less）的超微細金屬直接鍵合，讓晶片立體垂直黏貼如同一整塊單晶片，效能極致。"
+  },
+  {
+    "id": 32,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "在先進封裝製程中，若微凸塊（Micro-bumps）焊接出現「空洞（Void）」或「冷焊（Cold Joint）」缺陷，主要會造成什麼後果？",
+    "opts": [
+      "晶片運算時脈會被自動強制鎖定在出廠最低頻率且完全無法進行軟體超頻",
+      "晶圓表面單晶矽晶格在通電十秒內會自發性重組為高導電之金屬銅合金",
+      "封裝保護膠體會瞬間液化並從基板縫隙噴濺損壞無塵室空氣濾網系統",
+      "局部接觸電阻劇增、訊號完整性嚴重劣化，甚至可能引發晶片通電燒毀"
+    ],
+    "ans": 3,
+    "exp": "微凸塊是晶片間的微小導電銲球，如果有氣泡空洞（Void）或沒銲好，電流過不去或電阻過大就會像電阻爐一樣過熱，導致訊號斷線或燒毀。"
+  },
+  {
+    "id": 33,
+    "cat": "先進封裝與 CoWoS 異質整合",
+    "q": "異質整合（Heterogeneous Integration）技術之所以能突破摩爾定律減速的瓶頸，其核心邏輯為何？",
+    "opts": [
+      "打破過去單一材料與單一製程限制，將不同製程節點與不同材料晶片高度整合",
+      "將所有矽半導體零件完全替換為光學雷射元件以達到百分之百零功耗運算以確保運作穩定",
+      "讓全球所有晶圓製造廠全部採用同一型號機台以消除任何產線規格差異",
+      "透過軟體演算法直接模擬硬體運作使實體晶片製造工序數量減少九成以上"
+    ],
+    "ans": 0,
+    "exp": "CPU 用最貴的 3nm，但電源管理晶片用便宜穩定的 28nm 就夠了。異質整合讓不同專長的小晶片住進同一個封裝套房，兼顧極致效能與性價比。"
+  },
+  {
+    "id": 34,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "台積公司創辦人張忠謀博士（Dr. Morris Chang）在 1987 年開創了「專業積體電路製造服務（Pure-Play Foundry）」模式，其核心承諾與商業革命為何？",
+    "opts": [
+      "向全球客戶免費提供所有晶圓製造產能，僅透過後續軟體授權與專利授權獲取利潤",
+      "專注於製造代工且堅持絕不設計、生產或銷售任何自有品牌的半導體產品，不與客戶競爭",
+      "要求所有晶片設計客戶必須強制採用台積電統一規範的固定電路架構與功能引腳以確保運作穩定",
+      "全面壟斷全球所有半導體上游原料石英砂礦開採權並以單一統一定價配銷全球市場"
+    ],
+    "ans": 1,
+    "exp": "張忠謀博士創立台積電時立下「絕不生產自有品牌、不與客戶競爭」的鐵律，讓全球 IC 設計公司能放心把商業機密交給台積電代工，開創半導體黃金盛世。"
+  },
+  {
+    "id": 35,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "在半導體產業鏈中，僅專注於晶片電路設計而沒有自己建造晶圓廠的公司，業界通稱為什麼？",
+    "opts": [
+      "IDM（整合元件製造商，兼具晶片設計、晶圓製造、封裝測試到自有品牌銷售並納入標準規範）",
+      "OSAT（半導體專業封測代工廠，專門提供晶圓切割、晶片封裝與電氣測試服務）",
+      "Foundry（專業晶圓代工廠，專責接受委託生產製造客戶所設計之晶圓晶片）",
+      "Fabless（無晶圓廠 IC 設計公司，專注於電路研發並將製造全數委託代工廠）"
+    ],
+    "ans": 3,
+    "exp": "Fabless (Fab-less，沒有晶圓廠) 公司如聯發科、NVIDIA、高通，專注在晶片架構設計與演算法，省去幾百億建廠開銷，把生產交給台積電。"
+  },
+  {
+    "id": 36,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "台積電所推動的「開放創新平台（Open Innovation Platform, OIP）」，其主要戰略價值為何？",
+    "opts": [
+      "強制要求全球所有大專院校電機工程系學生必須使用台積電專用作業系統編程",
+      "將台積電所有商業機密製程技術文件全面公開免費上傳至全球開源社群網站",
+      "串聯 EDA 電子設計自動化工具、矽智財 IP、設計服務與封測夥伴，降低客戶設計門檻",
+      "為全球所有消費性電子產品提供百分之百終身免費維修更換晶片售後服務以確保運作穩定"
+    ],
+    "ans": 2,
+    "exp": "OIP 就像半導體的 App Store，台積電把驗證好的軟體設計工具與矽智財庫串接好，讓客戶像拼積木一樣快速完成晶片設計，加速產品上市。"
+  },
+  {
+    "id": 37,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "在晶片設計流程中，工程師用於繪製、模擬驗證與佈局繞線極致複雜微電路的核心軟體工具統稱為什麼？",
+    "opts": [
+      "CAD（通用機械輔助設計軟體，專門繪製機械零件幾何外觀與結構圖紙）",
+      "BIM（建築資訊模型軟體，用於土木營造工程虛擬建模與管線衝突檢驗）",
+      "ERP（企業資源規劃系統，專門統籌企業內部財務報表、物料與人資系統）",
+      "EDA（電子設計自動化軟體，如高階晶片邏輯合成與模擬佈局繞線輔助工具）"
+    ],
+    "ans": 1,
+    "exp": "數百億顆電晶體不可能靠人工手畫，EDA (Electronic Design Automation) 軟體就像超級晶片造圖員，自動幫工程師進行邏輯合成與電路模擬驗證。"
+  },
+  {
+    "id": 38,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "在半導體製造經濟學中，所謂的「晶圓良率（Yield Rate）」其具體定義為何？",
+    "opts": [
+      "單片晶圓上經過嚴格電氣測試後功能完全正常且合格的晶片數佔總晶片數比例",
+      "晶圓廠內所有自動化生產機台在一整年三百六十五天當中的實際開機運轉率",
+      "晶圓製造過程中所使用的超純水與化學溶劑回收循環再利用的總體積百分比",
+      "從客戶下單送出設計圖紙到晶圓廠完成第一批實體樣品交貨所需的總天數比例"
+    ],
+    "ans": 0,
+    "exp": "一片晶圓切割出1000顆晶片，如果有900顆合格可用，良率就是90%。良率是晶圓廠獲利的核心生命線，良率越高，每顆晶片成本越低。"
+  },
+  {
+    "id": 39,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "整合元件製造商（IDM, Integrated Device Manufacturer）與專業晶圓代工（Foundry）在商業運作上的最大差別為何？",
+    "opts": [
+      "IDM 採用純木質外殼封裝晶片，而 Foundry 則一律全面使用金屬陶瓷材料封裝",
+      "IDM 僅能生產十奈米以上成熟製程，而 Foundry 則被國際法規強制限定只能生產先進製程",
+      "IDM 的工廠完全不設無塵室環境，而 Foundry 則必須採用 ISO Class 1 極致無塵室",
+      "IDM 涵蓋自有品牌晶片設計、製造到銷售，而 Foundry 僅專注製造不銷售自有產品"
+    ],
+    "ans": 3,
+    "exp": "Intel、三星早期為典型的 IDM（從設計到做晶片一條龍賣自己品牌），而台積電是純代工廠，像專業印刷廠幫各家出版社印書，絕不自己出書。"
+  },
+  {
+    "id": 40,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "台積公司近年在全球擴張設廠（如日本熊本 JASM、美國亞利桑那、德國德勒斯登），其在地化佈局最核心的戰略考量為何？",
+    "opts": [
+      "海外各國政府立法強制要求所有進口電子產品晶片必須百分之百在當地生產",
+      "因為台灣本島所有石英砂原料礦藏已全面開採枯竭必須向海外尋找替代礦源",
+      "貼近全球主要客戶與戰略市場，強化半導體供應鏈韌性並分散地緣政治風險",
+      "海外工廠的平均勞動人力薪資成本僅為台灣的三分之一可大幅降低人事支出"
+    ],
+    "ans": 2,
+    "exp": "全球經歷車用晶片荒後，各國深感供應鏈不能只有單一來源。台積電海外建廠既能就近服務汽車與科技大客戶，又能提升全球產能防禦力與供應鏈韌性。"
+  },
+  {
+    "id": 41,
+    "cat": "純晶圓代工與全球半導體生態系",
+    "q": "半導體晶圓廠在綠色製造中極度重視「超純水（Ultrapure Water, UPW）」，其在製程中的核心作用為何？",
+    "opts": [
+      "在每道微影、蝕刻與化學研磨工序後徹底清洗晶圓表面，去除任何極微小殘留雜質",
+      "直接注入無塵室中央空調系統中透過蒸發降溫以完全取代傳統冷媒氟氯碳化物以確保運作穩定",
+      "作為驅動高壓蒸汽渦輪發電機發電的主要動力來源以提供晶圓廠自給自足電能",
+      "用於調配工程師日常飲用水以提升無塵室值班人員工作時的抗疲勞與專注力"
+    ],
+    "ans": 0,
+    "exp": "超純水比市售純水純淨百萬倍，導電度幾乎為零，就像奈米級清潔水槍，負責在數百道製程中把晶圓上的化學廢液與離子洗得一乾二淨。"
+  },
+  {
+    "id": 42,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "在跨國半導體工程會議中，工程師提出報告「The wafer yield dropped due to particle contamination」，其正確中文語意為何？",
+    "opts": [
+      "晶圓廠總發電量因為配電線路過載跳電而呈現減半趨勢",
+      "晶圓製程良率因為微塵顆粒污染而出現顯著下滑現象",
+      "晶圓材料硬度因為高溫加熱烘烤而提升了百分之二十",
+      "晶片封裝厚度因為研磨機壓力失衡而超出客戶規範標準"
+    ],
+    "ans": 1,
+    "exp": "Yield 代表良率（生產合格率），particle contamination 指微塵微粒污染，是晶圓良率受損最常見的原因之一。"
+  },
+  {
+    "id": 43,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "在無塵室生產線交接報告中常見的「Throughput（吞吐量/產能）」，其工程定義為何？",
+    "opts": [
+      "每片晶圓表面所能容納的最大電晶體總數量與金屬導線連接數量的理論極限比值",
+      "晶圓在經歷八百度高溫擴散爐管加熱過程中矽晶片內部所產生的熱膨脹位移距離",
+      "特定生產設備或整座晶圓廠在單位時間（如每小時或每日）內所能處理完成的晶圓數量",
+      "無塵室空調系統在發生微塵警報時自動啟動負壓抽風排氣將空氣完全濾淨的總時間以確保運作穩定"
+    ],
+    "ans": 2,
+    "exp": "Throughput 指單位時間內的生產產出量（例如每小時產出 120 片晶圓 WPH: Wafers Per Hour），是衡量機台生產效率的關鍵指標。"
+  },
+  {
+    "id": 44,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "在跨國半導體專案驗收會議中，外國工程師詢問「Are there any critical defects identified in this lot?」，句中「defect」所指為何？",
+    "opts": [
+      "Defect 指客戶在採購合約中所特別約定的延遲交貨違約賠償金比例",
+      "Defect 指機台運轉時馬達產生的微小機械振動頻率超出了安全限度",
+      "Defect 指晶圓出廠包裝防震箱外觀紙盒所貼附的條碼序號列印模糊",
+      "Defect 指晶片製造過程中所發生的瑕疵、缺陷或結構性電氣不良點"
+    ],
+    "ans": 3,
+    "exp": "Defect 即工程缺陷或瑕疵。在半導體中，任何微小的塵埃微粒、刮傷或電路斷路短路，都會被檢測儀標記為 defect。"
+  },
+  {
+    "id": 45,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "半導體合約與供應鏈對話中常聽到的「Turnaround Time (TAT)」，其所代表的業務指標為何？",
+    "opts": [
+      "晶圓切割機高速旋轉刀頭在切削單片晶圓時每分鐘所達到的最高轉速次數",
+      "生產週期時間（從客戶將設計交付晶圓廠投入製造，到產出實體晶片交貨的總耗時）",
+      "晶圓廠廢水處理系統將工業酸鹼廢液完全淨化為無毒排放水所需之化學反應時間以確保運作穩定",
+      "無塵室空氣循環過濾系統將室內空氣完全更換一次所需消耗的總電力能源"
+    ],
+    "ans": 1,
+    "exp": "Turnaround Time (TAT) 是晶圓代工服務的週轉週期時間，TAT 越短代表晶圓廠生產排程與應變效率越高，客戶能越快拿到晶片。"
+  },
+  {
+    "id": 46,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "在台積創新館向外國導覽人員（Docent）提問時，若想禮貌請教台積電如何突破摩爾定律極限，下列何者為最道地得體的專業英文問法？",
+    "opts": [
+      "Could you elaborate on how TSMC leverages advanced packaging to extend Moore’s Law?",
+      "Why do you think your computer chips are always very expensive for normal people?",
+      "Can you tell me how many wafers did you break in your cleanroom yesterday afternoon?",
+      "Is it true that Moore’s Law is completely fake and invented only for stock trading?"
+    ],
+    "ans": 0,
+    "exp": "使用「Could you elaborate on how... leverages... to extend...」是專業工程會議與導覽交流極為道地且尊重的標準問法。"
+  },
+  {
+    "id": 47,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "工程簡報時常使用的「PREP 架構」，其四個階段的正確展開順序為何？",
+    "opts": [
+      "Plan（初步計畫）→ Report（進度報告）→ Execute（執行工序）→ Postpone（延後驗收時間）",
+      "Price（報價金額）→ Risk（工程風險）→ Error（檢討錯誤）→ Profit（預期利潤指標）",
+      "Point（結論論點）→ Reason（背後原因）→ Example（佐證數據/案例）→ Point（重申核心結論）",
+      "Process（製程參數）→ Result（實驗結果）→ Equation（數學公式）→ Proof（理論推導證明）"
+    ],
+    "ans": 2,
+    "exp": "PREP 是外商工程職場最受推崇的高效口說架構：開門見山講結論 (Point)，說明原因 (Reason)，舉出數據/案例 (Example)，最後再敲定結論 (Point)。"
+  },
+  {
+    "id": 48,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "在晶圓品質檢驗報告中，縮寫「Metrology」的正確專業含義為何？",
+    "opts": [
+      "大都會交通管理系統（專門統籌高鐵與竹科通勤接駁巴士發車班次調度並納入標準規範）",
+      "氣象觀測學（專門預測廠區周遭大氣氣壓與降雨機率以防範颱風災害）",
+      "金屬冶煉技術（專門研究高爐煉鐵與純銅電解精煉過程的熱力學平衡）",
+      "精密量測工程（專門針對奈米線寬、膜厚及對準精度進行微觀物理計量分析）"
+    ],
+    "ans": 3,
+    "exp": "Metrology（計量學/量測技術）是半導體的「天眼」，利用電子顯微鏡（CD-SEM）或光學量測機台，精確測量幾奈米的電路尺寸與厚度。"
+  },
+  {
+    "id": 49,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "工程師在通訊軟體回覆「The pilot run batch meets all client design specifications」，其核心意思為何？",
+    "opts": [
+      "飛機駕駛員已順利完成今天下午的貨機跨洋運送飛行任務",
+      "試產批次的晶圓產品完全符合客戶的所有設計規格標準",
+      "機台因冷卻液外洩事故已全面暫停運作並等待原廠技師檢修",
+      "客戶已正式簽署合約同意將本季度的採購訂單數量全數刪減"
+    ],
+    "ans": 1,
+    "exp": "Pilot run 指「試產 / 前導試驗生產批次」，design specifications 即「設計規格標準」，代表量產前的驗證完全達標。"
+  },
+  {
+    "id": 50,
+    "cat": "半導體職場英文與跨國工程溝通",
+    "q": "在跨國團隊專案交接時，若要表達「我們必須落實標準作業程序以確保製程再現性」，最精確的專業英文為下列何者？",
+    "opts": [
+      "We need to buy cheapest chemical materials from internet to maximize company profit.",
+      "We should abandon all old factory rules so that workers can work much faster today.",
+      "We have to delete all computerized records to avoid computer virus infections in fab.",
+      "We must strictly follow SOPs to ensure high process repeatability and stability."
+    ],
+    "ans": 3,
+    "exp": "「strictly follow SOPs to ensure high process repeatability」是半導體晶圓廠對於製程穩定度與再現性最道地嚴謹的職場英文。"
+  }
+];
+
+    // ==========================================
+    // 三層防呆不斷線 TTS 英語語音引擎
+    // ==========================================
+    window.__activeUtterance = null;
+    let synth = window.speechSynthesis;
+
+    function speakText(text) {
+      if (!synth) return;
+      
+      const cleanText = text.replace(/\([^)]*\)|（[^）]*）/g, '')
+                            .replace(/[\u4e00-\u9fa5]/g, '')
+                            .trim();
+      if (!cleanText) return;
+
+      if (synth.resume) {
+        synth.resume();
+      }
+
+      synth.cancel();
+
+      setTimeout(() => {
+        try {
+          const utter = new SpeechSynthesisUtterance(cleanText);
+          utter.lang = 'en-US';
+          utter.rate = 0.95;
+          utter.pitch = 1.0;
+
+          const badge = document.getElementById('ttsBadge');
+          const badgeText = document.getElementById('ttsStatusText');
+
+          utter.onstart = () => {
+            if (badge) {
+              badge.classList.remove('hidden');
+              badgeText.textContent = '播報中...';
+            }
+          };
+
+          utter.onend = () => {
+            window.__activeUtterance = null;
+            if (badgeText) badgeText.textContent = 'TTS 就緒';
+          };
+
+          utter.onerror = () => {
+            window.__activeUtterance = null;
+            if (badgeText) badgeText.textContent = '語音備援';
+          };
+
+          window.__activeUtterance = utter;
+          synth.speak(utter);
+        } catch (e) {
+          const audio = new Audio("https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=" + encodeURIComponent(cleanText));
+          audio.play().catch(() => {});
+        }
+      }, 60);
+    }
+
+    // ==========================================
+    // 7 大模組切換邏輯
+    // ==========================================
+    let currentModule = 1;
+    function switchModule(modId) {
+      currentModule = modId;
+      for (let i = 1; i <= 7; i++) {
+        const sec = document.getElementById(`module-${i}`);
+        const tab = document.getElementById(`tab-${i}`);
+        const mTab = document.getElementById(`m-tab-${i}`);
+        if (i === modId) {
+          sec.classList.remove('hidden');
+          if (tab) {
+            tab.className = (i === 7) 
+              ? 'tab-btn p-2 rounded-xl border border-amber-400 text-xs font-extrabold transition text-center flex flex-col items-center gap-1 bg-gradient-to-r from-purple-900/80 to-amber-900/80 text-amber-200 shadow-lg shadow-purple-600/30'
+              : 'tab-btn tab-active p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1';
+          }
+          if (mTab) mTab.className = (i === 7) ? 'text-center text-[10px] text-amber-300 font-extrabold flex flex-col items-center' : 'text-center text-[10px] text-purple-400 font-bold flex flex-col items-center';
+        } else {
+          sec.classList.add('hidden');
+          if (tab) {
+            tab.className = (i === 7)
+              ? 'tab-btn p-2 rounded-xl border border-amber-500/40 text-xs font-extrabold transition text-center flex flex-col items-center gap-1 bg-amber-950/30 text-amber-300 hover:border-amber-400 shadow-md'
+              : 'tab-btn p-2 rounded-xl border border-slate-700 text-xs font-bold transition text-center flex flex-col items-center gap-1 hover:border-purple-500/50';
+          }
+          if (mTab) mTab.className = 'text-center text-[10px] text-slate-400 font-bold flex flex-col items-center';
+        }
+      }
+      renderCurrentCanvas();
+      if (modId === 7) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function jumpToQuizCategory(questionIndex) {
+      switchModule(7);
+      loadQuestion(questionIndex);
+    }
+
+    function renderCurrentCanvas() {
+      if (currentModule === 1) drawM1();
+      else if (currentModule === 2) drawM2();
+      else if (currentModule === 3) drawM3();
+      else if (currentModule === 4) drawM4();
+      else if (currentModule === 5) drawM5();
+      else if (currentModule === 6) drawM6();
+    }
+
+    // ==========================================
+    // MODULE 1: EUV 微影雙變數配平
+    // ==========================================
+    const m1Dose = document.getElementById('m1Dose');
+    const m1Focus = document.getElementById('m1Focus');
+
+    function updateM1() {
+      const dose = parseInt(m1Dose.value);
+      const focus = parseInt(m1Focus.value);
+      document.getElementById('m1DoseVal').textContent = `${dose} mJ/cm²`;
+      document.getElementById('m1FocusVal').textContent = `${focus} nm`;
+
+      const diagCurr = document.getElementById('m1DiagCurrent');
+      const diagWhat = document.getElementById('m1DiagWhatIf');
+      const statText = document.getElementById('m1StatusText');
+      const cdText = document.getElementById('m1CdText');
+
+      let cd = (2.0 + (dose - 50) * 0.05 + Math.abs(focus) * 0.03).toFixed(2);
+      cdText.textContent = `閘極臨界尺寸 (CD)：${cd} nm`;
+
+      const isDoseOk = (dose >= 45 && dose <= 55);
+      const isFocusOk = (Math.abs(focus) <= 6);
+
+      if (isDoseOk && isFocusOk) {
+        statText.textContent = '綠色甜蜜點達成 (良率 99.8%)';
+        statText.className = 'text-emerald-400 font-bold';
+        diagCurr.textContent = `能量 ${dose} mJ/cm²，焦點偏移 ${focus} nm。光阻感光深度與曝光能量達成完美配平！`;
+        diagWhat.innerHTML = '👉 若能量拉升至 70：線條過細坍塌。<br>👉 若能量降至 30：光阻未透產生橋接短路。';
+      } else if (dose > 60) {
+        statText.textContent = '過度曝光 (Overexposed) 線寬崩塌';
+        statText.className = 'text-rose-400 font-bold';
+        diagCurr.textContent = `能量過高 (${dose} mJ/cm²)，光化學反應過激，奈米線路太細而倒塌！`;
+        diagWhat.innerHTML = '👉 請將曝光能量調回 45~55 mJ/cm² 區間，以維持 2nm 結構力學強度。';
+      } else if (dose < 40) {
+        statText.textContent = '曝光不足 (Underexposed) 影像沾黏';
+        statText.className = 'text-amber-400 font-bold';
+        diagCurr.textContent = `能量不足 (${dose} mJ/cm²)，底層光阻分子未完全裂解，無法顯影出電路溝槽。`;
+        diagWhat.innerHTML = '👉 請提高曝光劑量，確保 EUV 光子完全貫穿感光層。';
+      } else {
+        statText.textContent = '焦點偏差 (Defocus) 影像模糊';
+        statText.className = 'text-amber-400 font-bold';
+        diagCurr.textContent = `焦平面偏移 ${focus} nm，超出 High-NA 奈米級景深容許範圍，電路輪廓邊緣模糊。`;
+        diagWhat.innerHTML = '👉 請將焦點偏移量校準至 -5 ~ +5 nm 區間。';
+      }
+
+      drawM1();
+    }
+
+    function resetM1(d, f) {
+      m1Dose.value = d;
+      m1Focus.value = f;
+      updateM1();
+    }
+
+    function drawM1() {
+      const cvs = document.getElementById('m1Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.15)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 25) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 25) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+
+      const dose = parseInt(m1Dose.value);
+      const focus = parseInt(m1Focus.value);
+      const alpha = Math.min(1, Math.max(0.2, dose / 60));
+
+      const grad = ctx.createLinearGradient(w/2, 20, w/2, 170);
+      grad.addColorStop(0, `rgba(168, 85, 247, ${alpha})`);
+      grad.addColorStop(1, `rgba(245, 158, 11, ${alpha * 0.8})`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(w/2 - 60, 20);
+      ctx.lineTo(w/2 + 60, 20);
+      ctx.lineTo(w/2 + 20 + focus*0.5, 170);
+      ctx.lineTo(w/2 - 20 - focus*0.5, 170);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.fillRect(w/2 - 80, 85, 160, 16);
+      ctx.strokeRect(w/2 - 80, 85, 160, 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px monospace';
+      ctx.fillText('HIGH-NA PROJECTION OPTICS (0.55 NA)', w/2 - 95, 80);
+
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(40, 190, w - 80, 50);
+      ctx.strokeStyle = '#64748b';
+      ctx.strokeRect(40, 190, w - 80, 50);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('12-INCH SILICON WAFER SUBSTRATE (300mm)', 50, 220);
+
+      const isSweet = (dose >= 45 && dose <= 55 && Math.abs(focus) <= 6);
+      const lineWidth = Math.max(2, Math.min(22, 12 - (dose - 50) * 0.2));
+
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = isSweet ? '#22c55e' : (dose > 60 ? '#f43f5e' : '#f59e0b');
+      
+      for (let i = -3; i <= 3; i++) {
+        const xPos = w/2 + i * 28;
+        ctx.beginPath();
+        ctx.moveTo(xPos, 170);
+        ctx.lineTo(xPos, 190);
+        ctx.stroke();
+      }
+    }
+
+    m1Dose.addEventListener('input', updateM1);
+    m1Focus.addEventListener('input', updateM1);
+
+    // ==========================================
+    // MODULE 2: 8 大工序排程與安全互鎖
+    // ==========================================
+    let m2Locked = true;
+    let m2Step = 0;
+    const m2StepNames = [
+      '1. 晶柱長晶切片', '2. 高溫熱氧化', '3. 旋轉塗布光阻',
+      '4. EUV 微影曝光', '5. 電漿乾式蝕刻', '6. 高能離子植入',
+      '7. CVD 薄膜沉積', '8. CMP 化學研磨'
+    ];
+
+    function initM2() {
+      const grid = document.getElementById('m2StepGrid');
+      grid.innerHTML = '';
+      m2StepNames.forEach((name, idx) => {
+        const btn = document.createElement('button');
+        btn.id = `m2-btn-${idx}`;
+        btn.textContent = name;
+        btn.className = 'py-2 px-2.5 rounded-lg border text-left font-bold transition ' +
+          (idx < m2Step ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50' : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-purple-500');
+        btn.onclick = () => handleM2StepClick(idx);
+        grid.appendChild(btn);
+      });
+    }
+
+    function toggleM2Lock() {
+      m2Locked = !m2Locked;
+      const btn = document.getElementById('m2LockBtn');
+      const status = document.getElementById('m2LockStatus');
+      const diagCurr = document.getElementById('m2DiagCurrent');
+
+      if (!m2Locked) {
+        btn.textContent = '安全鎖解除 (ARMED)';
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition';
+        status.textContent = '安全連鎖：已就緒 (ARMED)';
+        status.className = 'text-emerald-400';
+        diagCurr.textContent = '真空腔抽氣完畢，高純氮吹掃就緒，可依工序點擊推進！';
+      } else {
+        btn.textContent = '點擊解除鎖定';
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition';
+        status.textContent = '安全連鎖：未就緒 (LOCKED)';
+        status.className = 'text-rose-400';
+        diagCurr.textContent = '安全鎖已啟動，所有半導體製程機台物理閉鎖中。';
+      }
+      drawM2();
+    }
+
+    function handleM2StepClick(idx) {
+      if (m2Locked) {
+        alert('⚠️ 安全互鎖保護生效！請先點擊上方按鈕解除「真空/高純氮氣安全互鎖開關」，方可啟動製程！');
+        return;
+      }
+      if (idx !== m2Step) {
+        alert(`❌ 工序違規報警！目前應執行【${m2StepNames[m2Step]}】，嚴禁跳級執行【${m2StepNames[idx]}】！\n若未披覆保護層直接操作，將引發晶圓不可逆腐蝕損毀！`);
+        return;
+      }
+
+      m2Step++;
+      document.getElementById('m2StepStatus').textContent = `目前工序：Step ${m2Step} / 8`;
+      const diagCurr = document.getElementById('m2DiagCurrent');
+      diagCurr.textContent = `已順利完成【${m2StepNames[idx]}】！晶圓微觀薄膜與電路沉積進度正常。`;
+
+      initM2();
+      drawM2();
+
+      if (m2Step === 8) {
+        diagCurr.textContent = '🎉 8 大工序 100% 圓滿達成！晶圓表面高度平坦化，完美進入晶片測試封裝階段。';
+      }
+    }
+
+    function resetM2() {
+      m2Step = 0;
+      m2Locked = true;
+      document.getElementById('m2LockBtn').textContent = '點擊解除鎖定';
+      document.getElementById('m2LockBtn').className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition';
+      document.getElementById('m2LockStatus').textContent = '安全連鎖：未就緒 (LOCKED)';
+      document.getElementById('m2LockStatus').className = 'text-rose-400';
+      document.getElementById('m2StepStatus').textContent = '目前工序：Step 0 / 8';
+      initM2();
+      drawM2();
+    }
+
+    function drawM2() {
+      const cvs = document.getElementById('m2Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(50, 180, w - 100, 40);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('矽晶圓底層 (Silicon Substrate)', 60, 205);
+
+      const layerColors = [
+        '#64748b', '#0284c7', '#f59e0b', '#a855f7',
+        '#ef4444', '#10b981', '#06b6d4', '#e2e8f0'
+      ];
+
+      for (let i = 0; i < m2Step; i++) {
+        ctx.fillStyle = layerColors[i];
+        ctx.fillRect(50, 180 - (i + 1) * 16, w - 100, 14);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '9px monospace';
+        ctx.fillText(m2StepNames[i], 60, 191 - (i + 1) * 16);
+      }
+
+      ctx.beginPath();
+      ctx.arc(w - 70, 40, 12, 0, Math.PI * 2);
+      ctx.fillStyle = m2Locked ? '#ef4444' : '#10b981';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px monospace';
+      ctx.fillText(m2Locked ? 'INTERLOCK LOCKED' : 'INTERLOCK ARMED', w - 170, 44);
+    }
+
+    // ==========================================
+    // MODULE 3: 2.5D/3D 先進封裝 (CoWoS) X 光透視
+    // ==========================================
+    let m3Curtain = 50;
+    let m3Mode = 'gpu';
+    let m3Defect = false;
+
+    function setM3Mode(mode) {
+      m3Mode = mode;
+      ['gpu', 'hbm', 'interposer'].forEach(m => {
+        const btn = document.getElementById(`m3Btn-${m}`);
+        if (m === mode) {
+          btn.className = 'w-full py-2 px-3 text-xs font-bold rounded-lg bg-purple-900/60 text-purple-200 border border-purple-500/50 text-left flex justify-between';
+        } else {
+          btn.className = 'w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-900 text-slate-300 border border-slate-700 text-left flex justify-between';
+        }
+      });
+      document.getElementById('m3DiagCurrent').textContent = `切換觀測目標至【${mode.toUpperCase()}】。透視簾可自由比對外部封裝金屬與內部 TSV 微結構。`;
+      drawM3();
+    }
+
+    function injectM3Defect() {
+      m3Defect = !m3Defect;
+      const stat = document.getElementById('m3DefectStatus');
+      const diagCurr = document.getElementById('m3DiagCurrent');
+      const diagWhat = document.getElementById('m3DiagWhatIf');
+
+      if (m3Defect) {
+        stat.textContent = '⚠️ 檢測出微凸塊空洞 (Void Detected)';
+        stat.className = 'text-rose-400 font-bold';
+        diagCurr.textContent = 'X 光掃描發現第 42 號微凸塊內部存在 35% 氣體空洞缺陷！';
+        diagWhat.innerHTML = '👉 該點電阻過大，通電負載時將造成熱衰竭斷線，必須啟動雷射重工修補。';
+      } else {
+        stat.textContent = 'TSV 導通良好 (99.8%)';
+        stat.className = 'text-emerald-400';
+        diagCurr.textContent = '全數微凸塊與 TSV 導通良好，封裝熱阻完全符合規格。';
+        diagWhat.innerHTML = '👉 高密度立體互連確保 HBM 與 GPU 算力無損傳輸。';
+      }
+      drawM3();
+    }
+
+    const m3Range = document.getElementById('m3CurtainRange');
+    m3Range.addEventListener('input', () => {
+      m3Curtain = parseInt(m3Range.value);
+      document.getElementById('m3CurtainPos').textContent = `透視比例：${m3Curtain}%`;
+      drawM3();
+    });
+
+    function drawM3() {
+      const cvs = document.getElementById('m3Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const splitX = (w * m3Curtain) / 100;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, splitX, h);
+      ctx.clip();
+
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(80, 50, w - 160, 160);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(80, 50, w - 160, 160);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('TSMC CoWoS AI ACCELERATOR', 120, 110);
+      ctx.font = '11px sans-serif';
+      ctx.fillText('【光學表面層：金屬散熱上蓋與封裝模膠】', 120, 140);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(splitX, 0, w - splitX, h);
+      ctx.clip();
+
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.fillStyle = '#1e1b4b';
+      ctx.fillRect(80, 160, w - 160, 50);
+      ctx.strokeStyle = '#818cf8';
+      ctx.strokeRect(80, 160, w - 160, 50);
+      ctx.fillStyle = '#c7d2fe';
+      ctx.font = '10px monospace';
+      ctx.fillText('SILICON INTERPOSER (HIGH-DENSITY RDL)', 100, 190);
+
+      for (let i = 0; i < 18; i++) {
+        const xPos = 110 + i * 22;
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(xPos, 160, 6, 50);
+      }
+
+      ctx.fillStyle = '#311042';
+      ctx.fillRect(100, 60, 180, 80);
+      ctx.strokeStyle = '#c084fc';
+      ctx.strokeRect(100, 60, 180, 80);
+      ctx.fillStyle = '#f3e8ff';
+      ctx.fillText('GPU LOGIC DIE', 130, 100);
+
+      ctx.fillStyle = '#14312b';
+      ctx.fillRect(320, 60, 180, 80);
+      ctx.strokeStyle = '#34d399';
+      ctx.strokeRect(320, 60, 180, 80);
+      ctx.fillStyle = '#d1fae5';
+      ctx.fillText('HBM3e (8-STACK DRAM)', 340, 100);
+
+      for (let i = 0; i < 18; i++) {
+        const xPos = 110 + i * 22;
+        ctx.beginPath();
+        ctx.arc(xPos + 3, 150, 4, 0, Math.PI * 2);
+        if (m3Defect && i === 12) {
+          ctx.fillStyle = '#ef4444';
+        } else {
+          ctx.fillStyle = '#fbbf24';
+        }
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(splitX, 0);
+      ctx.lineTo(splitX, h);
+      ctx.stroke();
+
+      ctx.fillStyle = '#a855f7';
+      ctx.beginPath();
+      ctx.arc(splitX, h/2, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px monospace';
+      ctx.fillText('X-RAY', splitX - 16, h/2 - 14);
+    }
+
+    // ==========================================
+    // MODULE 4: 純晶圓代工與供應鏈故障注入
+    // ==========================================
+    let m4Broken = { eda: false, fabless: false, foundry: false, osat: false, oem: false };
+
+    function toggleM4Node(nodeKey) {
+      m4Broken[nodeKey] = !m4Broken[nodeKey];
+      updateM4UI();
+      drawM4();
+    }
+
+    function resetM4All() {
+      m4Broken = { eda: false, fabless: false, foundry: false, osat: false, oem: false };
+      updateM4UI();
+      drawM4();
+    }
+
+    function updateM4UI() {
+      const keys = ['eda', 'fabless', 'foundry', 'osat', 'oem'];
+      const names = ['EDA / IP 智財授權', 'Fabless IC 設計', 'TSMC 純代工製造', 'OSAT 封裝測試', '終端客戶 (OEMs)'];
+      let brokenCount = 0;
+
+      keys.forEach((k, idx) => {
+        const btn = document.getElementById(`m4Node-${k}`);
+        if (m4Broken[k]) {
+          brokenCount++;
+          btn.innerHTML = `<span>${names[idx]}</span> <span class="text-rose-400 font-bold">✖ 斷鏈中斷</span>`;
+          btn.className = 'w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-rose-950/70 border border-rose-500/50 text-rose-200 text-left flex justify-between transition';
+        } else {
+          btn.innerHTML = `<span>${names[idx]}</span> <span class="text-emerald-400">● 正常</span>`;
+          btn.className = 'w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-slate-800 border border-slate-700 text-slate-200 text-left flex justify-between transition';
+        }
+      });
+
+      const flow = document.getElementById('m4FlowStatus');
+      const impact = document.getElementById('m4ImpactText');
+      const diagCurr = document.getElementById('m4DiagCurrent');
+      const diagWhat = document.getElementById('m4DiagWhatIf');
+
+      if (brokenCount === 0) {
+        flow.textContent = '100% 暢通';
+        flow.className = 'text-emerald-400 font-bold';
+        impact.textContent = '0 家廠商受影響';
+        diagCurr.textContent = '全球半導體分工生態系全速運轉，智慧晶片如期交付客戶。';
+        diagWhat.innerHTML = '👉 台積電與全球夥伴互利共榮，開創超過數千億美元產值。';
+      } else {
+        flow.textContent = '嚴重瓶頸阻斷';
+        flow.className = 'text-rose-400 font-bold';
+        impact.textContent = `${brokenCount * 250}+ 家跨國企業面臨停工停產`;
+        diagCurr.textContent = `節點中斷！晶片生產節奏陷入停擺，連鎖引發終端產品缺貨。`;
+        diagWhat.innerHTML = '👉 突顯「專業晶圓代工模式」做為全球科技不可或缺中樞的神經中樞地位。';
+      }
+    }
+
+    function drawM4() {
+      const cvs = document.getElementById('m4Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const nodes = [
+        { key: 'eda', name: 'EDA / IP', x: 60, y: 130 },
+        { key: 'fabless', name: 'IC 設計', x: 180, y: 130 },
+        { key: 'foundry', name: 'TSMC 代工', x: 300, y: 130 },
+        { key: 'osat', name: 'OSAT 封測', x: 420, y: 130 },
+        { key: 'oem', name: '終端 OEM', x: 530, y: 130 }
+      ];
+
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const n1 = nodes[i], n2 = nodes[i + 1];
+        const isCut = m4Broken[n1.key] || m4Broken[n2.key];
+
+        ctx.beginPath();
+        ctx.moveTo(n1.x, n1.y);
+        ctx.lineTo(n2.x, n2.y);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = isCut ? '#ef4444' : '#22c55e';
+        ctx.stroke();
+
+        if (isCut) {
+          ctx.fillStyle = '#ef4444';
+          ctx.font = '14px sans-serif';
+          ctx.fillText('✖', (n1.x + n2.x)/2 - 5, n1.y - 10);
+        }
+      }
+
+      nodes.forEach(n => {
+        const isBroken = m4Broken[n.key];
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 24, 0, Math.PI * 2);
+        ctx.fillStyle = isBroken ? '#7f1d1d' : (n.key === 'foundry' ? '#7e22ce' : '#1e293b');
+        ctx.fill();
+        ctx.strokeStyle = isBroken ? '#ef4444' : (n.key === 'foundry' ? '#c084fc' : '#38bdf8');
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(n.name, n.x, n.y + 3);
+        ctx.textAlign = 'left';
+      });
+    }
+
+    // ==========================================
+    // MODULE 5: 無塵室微塵污染 15 秒危機應變
+    // ==========================================
+    let m5Actions = { foup: false, curtain: false, ulpa: false };
+    let m5Timer = null;
+    let m5Elapsed = 0;
+    let m5Running = false;
+
+    function toggleM5Action(actionKey) {
+      m5Actions[actionKey] = !m5Actions[actionKey];
+      const stateEl = document.getElementById(`m5State-${actionKey}`);
+      const btn = document.getElementById(`m5Btn-${actionKey}`);
+
+      if (m5Actions[actionKey]) {
+        stateEl.textContent = '✅ 已啟動';
+        btn.className = 'w-full py-2 px-3 text-xs font-bold rounded-lg bg-emerald-950/70 border border-emerald-500/50 text-emerald-200 text-left flex justify-between transition';
+      } else {
+        stateEl.textContent = '未執行';
+        btn.className = 'w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-left flex justify-between transition';
+      }
+      checkM5Status();
+    }
+
+    function startM5Crisis() {
+      if (m5Running) return;
+      m5Running = true;
+      m5Elapsed = 0;
+      document.getElementById('m5StartBtn').disabled = true;
+      document.getElementById('m5DiagCurrent').textContent = '🚨 警報！無塵室 3 號機台附近突發 0.1μm 微塵洩漏！15 秒黃金處置窗口倒數中！';
+
+      m5Timer = setInterval(() => {
+        m5Elapsed += 0.5;
+        document.getElementById('m5TimeText').textContent = `${m5Elapsed.toFixed(1)} 秒`;
+        checkM5Status();
+        drawM5();
+
+        if (m5Elapsed >= 20) {
+          clearInterval(m5Timer);
+          m5Running = false;
+          document.getElementById('m5StartBtn').disabled = false;
+        }
+      }, 500);
+    }
+
+    function checkM5Status() {
+      const allDone = m5Actions.foup && m5Actions.curtain && m5Actions.ulpa;
+      const pCount = document.getElementById('m5ParticleCount');
+      const yieldText = document.getElementById('m5YieldText');
+      const diagWhat = document.getElementById('m5DiagWhatIf');
+
+      if (allDone && m5Elapsed <= 15) {
+        pCount.textContent = '0.05 ppm (已排淨)';
+        pCount.className = 'text-emerald-400 font-bold';
+        yieldText.textContent = '99.2% (安全保全)';
+        yieldText.className = 'text-emerald-400 font-bold';
+        diagWhat.innerHTML = '🎉 完美處置！在黃金窗口內成功密封晶圓盒並排除微塵，晶圓良率完全保全！';
+      } else if (m5Elapsed > 15 && !allDone) {
+        pCount.textContent = '128 ppm (微塵沉降)';
+        pCount.className = 'text-rose-400 font-bold';
+        yieldText.textContent = '0.0% (全批報廢)';
+        yieldText.className = 'text-rose-400 font-bold';
+        diagWhat.innerHTML = '💥 超過 15 秒未及時應變！微塵已落入晶圓閘極電路，造成致命短路，損失千萬美元！';
+      }
+    }
+
+    function resetM5() {
+      if (m5Timer) clearInterval(m5Timer);
+      m5Running = false;
+      m5Elapsed = 0;
+      m5Actions = { foup: false, curtain: false, ulpa: false };
+      ['foup', 'curtain', 'ulpa'].forEach(k => {
+        document.getElementById(`m5State-${k}`).textContent = '未執行';
+        document.getElementById(`m5Btn-${k}`).className = 'w-full py-2 px-3 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-left flex justify-between transition';
+      });
+      document.getElementById('m5StartBtn').disabled = false;
+      document.getElementById('m5TimeText').textContent = '0.0 秒';
+      document.getElementById('m5ParticleCount').textContent = '0.2 ppm (正常)';
+      document.getElementById('m5YieldText').textContent = '99.4%';
+      document.getElementById('m5DiagCurrent').textContent = '無塵室維持 ISO Class 1 基準環境，超純空氣層流平順向下流通。';
+      drawM5();
+    }
+
+    function drawM5() {
+      const cvs = document.getElementById('m5Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(40, 40, w - 80, h - 80);
+      ctx.strokeStyle = '#475569';
+      ctx.strokeRect(40, 40, w - 80, h - 80);
+
+      ctx.fillStyle = m5Actions.foup ? '#15803d' : '#f97316';
+      ctx.fillRect(w/2 - 60, h/2 - 30, 120, 60);
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(w/2 - 60, h/2 - 30, 120, 60);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(m5Actions.foup ? 'FOUP SEALED' : 'FOUP OPEN', w/2 - 45, h/2 + 5);
+
+      if (m5Running) {
+        const particleCount = m5Actions.ulpa ? 15 : 90;
+        ctx.fillStyle = '#f43f5e';
+        for (let i = 0; i < particleCount; i++) {
+          const px = 50 + (i * 37) % (w - 100);
+          const py = 50 + (i * 23) % (h - 100);
+          ctx.beginPath();
+          ctx.arc(px, py, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // ==========================================
+    // MODULE 6: 離子植入機偏轉與深度瞄準
+    // ==========================================
+    const m6Volt = document.getElementById('m6Volt');
+    const m6BField = document.getElementById('m6BField');
+    let m6Dopant = 'boron';
+
+    function setM6Dopant(dop) {
+      m6Dopant = dop;
+      const btnB = document.getElementById('m6Dopant-boron');
+      const btnP = document.getElementById('m6Dopant-phos');
+
+      if (dop === 'boron') {
+        btnB.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-purple-900/60 text-purple-200 border border-purple-500/50';
+        btnP.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700';
+      } else {
+        btnP.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-purple-900/60 text-purple-200 border border-purple-500/50';
+        btnB.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-300 border border-slate-700';
+      }
+      updateM6();
+    }
+
+    function updateM6() {
+      const v = parseInt(m6Volt.value);
+      const b = parseInt(m6BField.value) / 100;
+      document.getElementById('m6VoltVal').textContent = `${v} kV`;
+      document.getElementById('m6BVal').textContent = `${b.toFixed(2)} Tesla`;
+
+      const mass = (m6Dopant === 'boron') ? 11 : 31;
+      const radius = Math.sqrt(2 * mass * v) / (b * 5);
+      document.getElementById('m6RadiusText').textContent = `${radius.toFixed(1)} cm`;
+
+      const slitStat = document.getElementById('m6SlitStatus');
+      const depthText = document.getElementById('m6DepthText');
+      const diagCurr = document.getElementById('m6DiagCurrent');
+      const diagWhat = document.getElementById('m6DiagWhatIf');
+
+      const inSlit = (radius >= 11.5 && radius <= 13.5);
+      const depth = Math.round(v * 1.1);
+      depthText.textContent = `${depth} nm (${depth < 30 ? '過淺' : (depth > 65 ? '擊穿危險' : '接面正常')})`;
+
+      if (inSlit && depth >= 35 && depth <= 55) {
+        slitStat.textContent = '🎯 完美穿透分析狹縫';
+        slitStat.className = 'text-emerald-400 font-bold';
+        diagCurr.textContent = `電壓 ${v} kV 與磁場 ${b.toFixed(2)} T 精準共振，${m6Dopant === 'boron' ? '硼' : '磷'}離子準確植入 45 nm 接面！`;
+        diagWhat.innerHTML = '👉 雜質原子均勻分佈，成功構建高速電晶體源極與汲極導電通道。';
+      } else if (!inSlit) {
+        slitStat.textContent = '💥 偏轉失配，撞擊腔壁';
+        slitStat.className = 'text-rose-400 font-bold';
+        diagCurr.textContent = `偏轉半徑為 ${radius.toFixed(1)} cm，未能命中 12.5 cm 狹縫，離子全數撞擊磁鐵腔壁損耗！`;
+        diagWhat.innerHTML = '👉 請微調磁場或電壓，使帶電粒子在勞侖茲力下準確切入狹縫。';
+      } else {
+        slitStat.textContent = '穿透但深度不符';
+        slitStat.className = 'text-amber-400 font-bold';
+        diagCurr.textContent = `離子雖穿透狹縫，但電壓為 ${v} kV，造成植入深度過深/過淺。`;
+        diagWhat.innerHTML = '👉 請將電壓校準至 35~50 kV 以維持標準 PN 接面厚度。';
+      }
+
+      drawM6();
+    }
+
+    m6Volt.addEventListener('input', updateM6);
+    m6BField.addEventListener('input', updateM6);
+
+    function drawM6() {
+      const cvs = document.getElementById('m6Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(40, h/2 - 25, 40, 50);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '9px monospace';
+      ctx.fillText('ION SOURCE', 30, h/2 - 32);
+
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.2)';
+      ctx.strokeStyle = '#a855f7';
+      ctx.beginPath();
+      ctx.arc(160, h/2, 60, -Math.PI/2, Math.PI/2);
+      ctx.stroke();
+      ctx.fillText('ANALYSIS MAGNET (B)', 130, h/2 - 70);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(280, 40, 10, h/2 - 15);
+      ctx.fillRect(280, h/2 + 15, 10, h/2 - 15);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText('RESOLVING SLIT', 260, 30);
+
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(480, 60, 20, h - 120);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('WAFER TARGET', 460, 50);
+
+      const v = parseInt(m6Volt.value);
+      const b = parseInt(m6BField.value) / 100;
+      const mass = (m6Dopant === 'boron') ? 11 : 31;
+      const radius = Math.sqrt(2 * mass * v) / (b * 5);
+
+      const inSlit = (radius >= 11.5 && radius <= 13.5);
+
+      ctx.beginPath();
+      ctx.moveTo(80, h/2);
+      ctx.strokeStyle = inSlit ? '#22c55e' : '#f43f5e';
+      ctx.lineWidth = 3;
+
+      if (inSlit) {
+        ctx.lineTo(285, h/2);
+        ctx.lineTo(480, h/2);
+      } else {
+        const devY = (radius - 12.5) * 8;
+        ctx.lineTo(240, h/2 + devY);
+        ctx.lineTo(280, h/2 + devY * 1.5);
+      }
+      ctx.stroke();
+    }
+
+    // ==========================================
+    // MODULE 7: 50 題精熟測驗前端系統邏輯
+    // ==========================================
+    let questions = FALLBACK_QUESTIONS;
+    let currentIndex = 0;
+    let solvedIds = new Set();
+    let elapsedSeconds = 0;
+    let timerInterval = null;
+    let isMastered = false;
+
+    function initTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        const mins = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+        const secs = String(elapsedSeconds % 60).padStart(2, '0');
+        const el = document.getElementById('timerText');
+        if (el) el.textContent = `${mins}:${secs}`;
+      }, 1000);
+    }
+
+    function renderNavGrid() {
+      const navGrid = document.getElementById('navGrid');
+      if (!navGrid) return;
+      navGrid.innerHTML = '';
+      for (let i = 0; i < questions.length; i++) {
+        const btn = document.createElement('button');
+        btn.id = `nav-btn-${i}`;
+        btn.textContent = i + 1;
+        btn.className = `py-1.5 text-xs font-mono font-bold rounded-lg border transition text-center ${
+          solvedIds.has(questions[i].id)
+            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50'
+            : (i === currentIndex
+                ? 'bg-purple-600 text-white border-purple-400'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700')
+        }`;
+        btn.onclick = () => loadQuestion(i);
+        navGrid.appendChild(btn);
+      }
+    }
+
+    function loadQuestion(index) {
+      if (index < 0 || index >= questions.length) return;
+      currentIndex = index;
+      const q = questions[index];
+
+      const badge = document.getElementById('qBadge');
+      const cat = document.getElementById('qCategory');
+      const text = document.getElementById('questionText');
+      const statusInd = document.getElementById('qStatusIndicator');
+
+      if (badge) badge.textContent = `Q${index + 1} / ${questions.length}`;
+      if (cat) cat.textContent = q.cat;
+      if (text) text.textContent = q.q;
+
+      const isSolved = solvedIds.has(q.id);
+      if (statusInd) {
+        statusInd.textContent = isSolved ? '✅ 已精熟' : '⏳ 作答中';
+        statusInd.className = isSolved ? 'text-xs text-emerald-400 font-bold' : 'text-xs text-slate-400 font-mono';
+      }
+
+      const expBox = document.getElementById('explanationBox');
+      if (expBox) {
+        if (isSolved) {
+          expBox.className = 'mt-6 p-4 rounded-xl border bg-emerald-950/40 border-emerald-500/40 block';
+          document.getElementById('expIcon').textContent = '✅';
+          document.getElementById('expTitle').textContent = '已通過此題！白話重點複習：';
+          document.getElementById('expTitle').className = 'text-sm font-bold text-emerald-300 mb-1';
+          document.getElementById('expText').textContent = q.exp;
+        } else {
+          expBox.className = 'hidden';
+        }
+      }
+
+      const container = document.getElementById('optionsContainer');
+      if (container) {
+        container.innerHTML = '';
+        const letters = ['A', 'B', 'C', 'D'];
+
+        q.opts.forEach((optText, optIdx) => {
+          const btn = document.createElement('button');
+          btn.className = `w-full text-left p-3.5 sm:p-4 rounded-xl border transition flex items-start gap-3 group text-sm sm:text-base ${
+            isSolved && optIdx === q.ans
+              ? 'bg-emerald-900/40 border-emerald-500 text-emerald-200'
+              : 'bg-slate-900/80 hover:bg-slate-800/90 border-slate-700/80 text-slate-200'
+          }`;
+          btn.innerHTML = `
+            <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold font-mono shrink-0 ${
+              isSolved && optIdx === q.ans ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-purple-400 group-hover:bg-purple-600 group-hover:text-white'
+            }">${letters[optIdx]}</span>
+            <span class="flex-1 leading-relaxed">${optText}</span>
+          `;
+          btn.onclick = () => handleSelectOption(optIdx);
+          container.appendChild(btn);
+        });
+      }
+
+      const pBtn = document.getElementById('prevBtn');
+      const nBtn = document.getElementById('nextBtn');
+      if (pBtn) pBtn.disabled = (index === 0);
+      if (nBtn) nBtn.disabled = (index === questions.length - 1);
+
+      updateProgressUI();
+    }
+
+    function handleSelectOption(optIdx) {
+      const q = questions[currentIndex];
+      const card = document.getElementById('quizCard');
+      const expBox = document.getElementById('explanationBox');
+      const expTitle = document.getElementById('expTitle');
+      const expText = document.getElementById('expText');
+      const expIcon = document.getElementById('expIcon');
+
+      if (optIdx === q.ans) {
+        solvedIds.add(q.id);
+        if (expBox) {
+          expBox.className = 'mt-6 p-4 rounded-xl border bg-emerald-950/50 border-emerald-500/50 block';
+          expIcon.textContent = '🎉';
+          expTitle.textContent = '回答正確！外行人秒懂白話詳解：';
+          expTitle.className = 'text-sm font-bold text-emerald-300 mb-1';
+          expText.textContent = q.exp;
+        }
+
+        saveLocalProgress();
+        updateProgressUI();
+        loadQuestion(currentIndex);
+
+        if (solvedIds.size === questions.length && !isMastered) {
+          isMastered = true;
+          triggerConfetti();
+          const comp = document.getElementById('completionSection');
+          if (comp) {
+            comp.classList.remove('hidden');
+            comp.scrollIntoView({ behavior: 'smooth' });
+          }
+        } else if (currentIndex < questions.length - 1) {
+          setTimeout(() => {
+            navigateQuestion(1);
+          }, 900);
+        }
+      } else {
+        if (card) {
+          card.classList.remove('animate-shake');
+          void card.offsetWidth;
+          card.classList.add('animate-shake');
+        }
+        if (expBox) {
+          expBox.className = 'mt-6 p-4 rounded-xl border bg-amber-950/50 border-amber-500/50 block';
+          expIcon.textContent = '💡';
+          expTitle.textContent = '尚未命中！別氣餒，先讀懂白話原理解析再試一次：';
+          expTitle.className = 'text-sm font-bold text-amber-300 mb-1';
+          expText.textContent = q.exp;
+        }
+      }
+    }
+
+    function navigateQuestion(delta) {
+      const newIdx = currentIndex + delta;
+      if (newIdx >= 0 && newIdx < questions.length) {
+        loadQuestion(newIdx);
+      }
+    }
+
+    function updateProgressUI() {
+      const count = solvedIds.size;
+      const cntEl = document.getElementById('solvedCount');
+      const barEl = document.getElementById('progressBar');
+      if (cntEl) cntEl.textContent = count;
+      if (barEl) {
+        const pct = Math.round((count / questions.length) * 100);
+        barEl.style.width = `${pct}%`;
+      }
+      renderNavGrid();
+    }
+
+    function setupReflectionCounter() {
+      const textEl = document.getElementById('reflectionInput');
+      const countEl = document.getElementById('charCount');
+      const alertEl = document.getElementById('charAlert');
+      const leftEl = document.getElementById('charsLeft');
+
+      if (!textEl) return;
+      textEl.addEventListener('input', () => {
+        const len = textEl.value.trim().length;
+        if (countEl) countEl.textContent = `${len} / 50 字以上`;
+        if (len < 50) {
+          if (alertEl) alertEl.classList.remove('hidden');
+          if (leftEl) leftEl.textContent = 50 - len;
+          if (countEl) countEl.className = 'text-xs font-mono text-amber-400 font-bold';
+        } else {
+          if (alertEl) alertEl.classList.add('hidden');
+          if (countEl) countEl.className = 'text-xs font-mono text-emerald-400 font-bold';
+        }
+        saveLocalProgress();
+      });
+    }
+
+    function saveLocalProgress() {
+      const cEl = document.getElementById('classNum');
+      const nEl = document.getElementById('studentName');
+      const eEl = document.getElementById('studentEmail');
+      const rEl = document.getElementById('reflectionInput');
+
+      const data = {
+        classNum: cEl ? cEl.value : '',
+        studentName: nEl ? nEl.value : '',
+        studentEmail: eEl ? eEl.value : '',
+        solvedIds: Array.from(solvedIds),
+        currentIndex: currentIndex,
+        elapsedSeconds: elapsedSeconds,
+        reflection: rEl ? rEl.value : ''
+      };
+      localStorage.setItem('tsmc_fieldtrip_progress', JSON.stringify(data));
+
+      if (GAS_URL && data.studentName) {
+        fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'saveProgress',
+            data: {
+              name: data.studentName,
+              classNum: data.classNum,
+              email: data.studentEmail,
+              solvedIds: data.solvedIds,
+              currentQIndex: data.currentIndex,
+              elapsedSec: data.elapsedSeconds,
+              reflection: data.reflection
+            }
+          })
+        }).catch(() => {});
+      }
+    }
+
+    function tryAutoResumeLocal() {
+      const raw = localStorage.getItem('tsmc_fieldtrip_progress');
+      if (raw) {
+        try {
+          const d = JSON.parse(raw);
+          const cEl = document.getElementById('classNum');
+          const nEl = document.getElementById('studentName');
+          const eEl = document.getElementById('studentEmail');
+          const rEl = document.getElementById('reflectionInput');
+          const countEl = document.getElementById('charCount');
+
+          if (d.classNum && cEl) cEl.value = d.classNum;
+          if (d.studentName && nEl) nEl.value = d.studentName;
+          if (d.studentEmail && eEl) eEl.value = d.studentEmail;
+          if (Array.isArray(d.solvedIds)) solvedIds = new Set(d.solvedIds);
+          if (d.reflection && rEl) {
+            rEl.value = d.reflection;
+            if (countEl) countEl.textContent = `${d.reflection.trim().length} / 50 字以上`;
+          }
+          if (typeof d.elapsedSeconds === 'number') elapsedSeconds = d.elapsedSeconds;
+          if (typeof d.currentIndex === 'number') loadQuestion(d.currentIndex);
+          updateProgressUI();
+          if (solvedIds.size === questions.length) {
+            isMastered = true;
+            const comp = document.getElementById('completionSection');
+            if (comp) comp.classList.remove('hidden');
+          }
+        } catch(e) {}
+      }
+    }
+
+    async function handleResumeProgress() {
+      const name = prompt('請輸入您的【真實姓名】以搜尋接續雲端或本機進度：');
+      if (!name || !name.trim()) return;
+
+      const cleanName = name.trim();
+
+      const raw = localStorage.getItem('tsmc_fieldtrip_progress');
+      if (raw) {
+        try {
+          const d = JSON.parse(raw);
+          if (d.studentName === cleanName) {
+            applyProgressData(d);
+            alert(`已從本機為您恢復【${cleanName}】的進度（已解 ${solvedIds.size} 題）！`);
+            return;
+          }
+        } catch(e) {}
+      }
+
+      if (GAS_URL) {
+        try {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'loadProgress', name: cleanName })
+          });
+          const json = await res.json();
+          if (json.status === 'success' && json.data) {
+            applyProgressData({
+              classNum: json.data.classNum,
+              studentName: json.data.name,
+              studentEmail: json.data.email,
+              solvedIds: json.data.solvedIds,
+              currentIndex: json.data.currentQIndex,
+              elapsedSeconds: json.data.elapsedSec,
+              reflection: json.data.reflection
+            });
+            alert(`已從雲端試算表為您恢復【${cleanName}】的作答進度（已解 ${solvedIds.size} 題）！`);
+            return;
+          }
+        } catch(e) {}
+      }
+
+      alert(`查無學員【${cleanName}】的暫存紀錄，請確認姓名是否一致。`);
+    }
+
+    function applyProgressData(d) {
+      const cEl = document.getElementById('classNum');
+      const nEl = document.getElementById('studentName');
+      const eEl = document.getElementById('studentEmail');
+      const rEl = document.getElementById('reflectionInput');
+      const countEl = document.getElementById('charCount');
+
+      if (d.classNum && cEl) cEl.value = d.classNum;
+      if (d.studentName && nEl) nEl.value = d.studentName;
+      if (d.studentEmail && eEl) eEl.value = d.studentEmail;
+      if (Array.isArray(d.solvedIds)) solvedIds = new Set(d.solvedIds);
+      if (d.reflection && rEl) {
+        rEl.value = d.reflection;
+        if (countEl) countEl.textContent = `${d.reflection.trim().length} / 50 字以上`;
+      }
+      if (typeof d.elapsedSeconds === 'number') elapsedSeconds = d.elapsedSeconds;
+      loadQuestion(d.currentIndex || 0);
+      updateProgressUI();
+      if (solvedIds.size === questions.length) {
+        isMastered = true;
+        const comp = document.getElementById('completionSection');
+        if (comp) comp.classList.remove('hidden');
+      }
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    async function submitFinalCertificate() {
+      const nEl = document.getElementById('studentName');
+      const eEl = document.getElementById('studentEmail');
+      const cEl = document.getElementById('classNum');
+      const rEl = document.getElementById('reflectionInput');
+
+      const name = nEl ? nEl.value.trim() : '';
+      const email = eEl ? eEl.value.trim() : '';
+      const classNum = cEl ? cEl.value.trim() : '';
+      const reflection = rEl ? rEl.value.trim() : '';
+
+      if (!name) {
+        alert('請填寫真實姓名，以利證書正確列印您的姓名！');
+        if (nEl) nEl.focus();
+        return;
+      }
+      if (!email || !email.includes('@')) {
+        alert('請填寫正確有效的 Email，以便系統寄發黑金電子研習證書！');
+        if (eEl) eEl.focus();
+        return;
+      }
+      if (reflection.length < 50) {
+        alert(`參訪反思心得目前只有 ${reflection.length} 字，請至少撰寫 50 字以通過研習認證門檻！`);
+        if (rEl) rEl.focus();
+        return;
+      }
+
+      const btn = document.getElementById('submitAllBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '系統核發認證中，請稍候...';
+      }
+
+      const mins = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+      const secs = String(elapsedSeconds % 60).padStart(2, '0');
+      const durationStr = `${mins}分${secs}秒`;
+
+      const payload = {
+        action: 'submitQuiz',
+        data: {
+          name: name,
+          email: email,
+          classNum: classNum,
+          duration: durationStr,
+          reflection: reflection
+        }
+      };
+
+      const resultBox = document.getElementById('submitResultBox');
+      const resultMsg = document.getElementById('submitResultMsg');
+
+      if (GAS_URL) {
+        try {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          });
+          const json = await res.json();
+          if (resultBox) resultBox.classList.remove('hidden');
+          if (resultMsg) resultMsg.textContent = `✅ 認證資料已成功記錄於試算表！${json.certStatus || '電子證書已寄送至您的信箱'}`;
+          triggerConfetti();
+        } catch(e) {
+          if (resultBox) resultBox.classList.remove('hidden');
+          if (resultMsg) resultMsg.textContent = `✅ 恭喜完成！進度已安全保存在您的本機中。`;
+        }
+      } else {
+        if (resultBox) resultBox.classList.remove('hidden');
+        if (resultMsg) resultMsg.textContent = `✅ 恭喜完成全部 50 題精熟測驗與心得！目前為離線單檔模式，進度已安全保存在您的瀏覽器中。`;
+        triggerConfetti();
+      }
+
+      if (btn) btn.textContent = '🎉 認證完成';
+    }
+
+    // ==========================================
+    // 全域初始化啟動
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      updateM1();
+      initM2();
+      drawM2();
+      drawM3();
+      drawM4();
+      drawM5();
+      updateM6();
+      initTimer();
+      renderNavGrid();
+      loadQuestion(0);
+      setupReflectionCounter();
+      tryAutoResumeLocal();
+    });
+  </script>
+</body>
+</html>
